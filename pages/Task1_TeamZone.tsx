@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ZONES } from '../constants';
 import { useProject } from '../context/ProjectContext';
 import { TeamMember } from '../types';
-import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon } from 'lucide-react';
+import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon, Users } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -14,11 +14,14 @@ export const Task1_TeamZone: React.FC = () => {
     updateTeamMembers, 
     updateZoneJustification,
     updateSchoolSettings,
-    updateImage
+    updateImage,
+    assignTask
   } = useProject();
-  const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'deliverable'>('instructions');
+  const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'distribution' | 'deliverable'>('instructions');
   const [newMemberName, setNewMemberName] = useState('');
   const [expandedZoneId, setExpandedZoneId] = useState<number | null>(null);
+
+  const getTaskCount = (memberId: string) => state.task2.tasks.filter(t => t.assignedToId === memberId).length;
 
   const handleAddMember = () => {
     if (!newMemberName.trim()) return;
@@ -85,6 +88,12 @@ export const Task1_TeamZone: React.FC = () => {
                 Desarrollo
             </button>
             <button 
+                onClick={() => setActiveTab('distribution')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'distribution' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+            >
+                Reparto Global
+            </button>
+            <button 
                 onClick={() => setActiveTab('deliverable')}
                 className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'deliverable' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
             >
@@ -127,6 +136,83 @@ export const Task1_TeamZone: React.FC = () => {
             >
                 Comenzar Tarea <FileText size={20} />
             </button>
+        </div>
+      )}
+
+      {/* TAB: DISTRIBUTION */}
+      {activeTab === 'distribution' && (
+        <div className="space-y-6">
+            <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <Users size={24} className="text-purple-600" /> Panel de Reparto Global de Tareas
+                </h3>
+                
+                <p className="text-gray-600 mb-8">
+                    Para asegurar el éxito del proyecto, es fundamental que cada miembro sepa de qué parte es responsable. 
+                    Asignad las 6 micro-tareas de investigación que se desarrollarán en la siguiente fase.
+                </p>
+                
+                {/* Team Status */}
+                <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
+                    {state.team.map(member => {
+                         const count = getTaskCount(member.id);
+                         let color = "bg-gray-50 border-gray-200";
+                         if (count > 0 && count <= 2) color = "bg-green-50 border-green-200 text-green-800";
+                         if (count === 3) color = "bg-yellow-50 border-yellow-200 text-yellow-800";
+                         if (count >= 4) color = "bg-red-50 border-red-200 text-red-800";
+
+                         return (
+                            <div key={member.id} className={`p-4 rounded-xl border-2 min-w-[150px] text-center ${color}`}>
+                                <p className="font-bold">{member.name}</p>
+                                <p className="text-sm mt-1">{count} tareas asignadas</p>
+                            </div>
+                         )
+                    })}
+                </div>
+
+                {/* Assignment List */}
+                <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-gray-700 uppercase text-xs font-bold tracking-wider">
+                            <tr>
+                                <th className="p-4">Micro-Tarea de Investigación</th>
+                                <th className="p-4">Responsable</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {state.task2.tasks.map(task => (
+                                <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-4">
+                                        <div className="font-bold text-gray-900">{task.title}</div>
+                                        <div className="text-sm text-gray-500 mt-0.5">{task.description}</div>
+                                    </td>
+                                    <td className="p-4">
+                                        <select 
+                                            className="border border-gray-300 p-2.5 rounded-lg w-full max-w-[250px] bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
+                                            value={task.assignedToId || ''}
+                                            onChange={(e) => assignTask(task.id, e.target.value)}
+                                        >
+                                            <option value="">-- Seleccionar miembro --</option>
+                                            {state.team.map(m => (
+                                                <option key={m.id} value={m.id}>{m.name}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="mt-8 flex justify-end">
+                    <button 
+                        onClick={() => setActiveTab('deliverable')}
+                        className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        Ver Entregable Final <CheckCircle size={20} />
+                    </button>
+                </div>
+            </div>
         </div>
       )}
 
@@ -321,6 +407,15 @@ export const Task1_TeamZone: React.FC = () => {
                     placeholder="Ej: Hemos elegido el Mar Menor porque nos apasiona la cocina marinera..."
                 />
             </section>
+
+            <div className="flex justify-end mt-8">
+                <button 
+                    onClick={() => setActiveTab('distribution')}
+                    className="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors flex items-center gap-2"
+                >
+                    Siguiente: Reparto Global <Users size={20} />
+                </button>
+            </div>
         </div>
       )}
 
@@ -419,6 +514,32 @@ export const Task1_TeamZone: React.FC = () => {
                         <h3 className="text-sm font-bold uppercase text-gray-500 mb-2">Justificación de la Elección</h3>
                         <div className="p-4 border-l-4 border-gray-300 bg-gray-50 italic text-gray-700 min-h-[100px]">
                             {state.zoneJustification || "Sin justificación redactada."}
+                        </div>
+                    </div>
+
+                    {/* Task Distribution */}
+                    <div>
+                        <h3 className="text-sm font-bold uppercase text-gray-500 mb-3">Reparto Global de Tareas (Fase de Investigación)</h3>
+                        <div className="border border-gray-300 rounded-lg overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-gray-100 text-gray-700 font-bold">
+                                    <tr>
+                                        <th className="p-3 border-b border-gray-300">Micro-Tarea</th>
+                                        <th className="p-3 border-b border-gray-300">Responsable</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {state.task2.tasks.map(task => {
+                                        const assignee = state.team.find(m => m.id === task.assignedToId);
+                                        return (
+                                            <tr key={task.id}>
+                                                <td className="p-3 font-medium text-gray-800">{task.title}</td>
+                                                <td className="p-3 text-gray-700">{assignee?.name || <span className="text-red-400 italic">No asignado</span>}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

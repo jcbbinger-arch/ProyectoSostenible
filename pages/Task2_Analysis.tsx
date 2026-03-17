@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
-import { Users, Lightbulb, Printer, ChevronDown, ChevronUp, Lock, AlertTriangle, Save, CheckCircle } from 'lucide-react';
+import { Lightbulb, Printer, ChevronDown, ChevronUp, Lock, AlertTriangle, Save, CheckCircle } from 'lucide-react';
 
 export const Task2_Analysis: React.FC = () => {
-  const { state, assignTask, updateTaskContent, updateConcept } = useProject();
-  const [activeTab, setActiveTab] = useState<'instructions' | 'distribution' | 'execution' | 'concept' | 'deliverable'>('instructions');
+  const { state, updateTaskContent, updateConcept } = useProject();
+  const [activeTab, setActiveTab] = useState<'instructions' | 'execution' | 'concept' | 'deliverable'>('instructions');
   const [expandedTask, setExpandedTask] = useState<number | null>(null);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
@@ -33,10 +33,9 @@ export const Task2_Analysis: React.FC = () => {
         <div className="flex flex-wrap gap-2">
             {[
                 { id: 'instructions', label: '1. Instrucciones' },
-                { id: 'distribution', label: '2. Reparto' },
-                { id: 'execution', label: '3. Investigación' },
-                { id: 'concept', label: '4. Decisión' },
-                { id: 'deliverable', label: '5. Entregable' },
+                { id: 'execution', label: '2. Investigación' },
+                { id: 'concept', label: '3. Decisión' },
+                { id: 'deliverable', label: '4. Entregable' },
             ].map(tab => (
                  <button 
                     key={tab.id}
@@ -65,77 +64,9 @@ export const Task2_Analysis: React.FC = () => {
                 
                 <h4 className="font-bold text-lg mt-6">Pasos:</h4>
                 <ul className="list-disc pl-5">
-                    <li><strong>Paso 1: Reparto de Tareas.</strong> Asignad las tareas en equipo.</li>
-                    <li><strong>Paso 2: Ejecución.</strong> Cada miembro completa sus "mini-informes" asignados.</li>
-                    <li><strong>Paso 3: Conceptualización.</strong> Definid nombre, concepto y valores.</li>
+                    <li><strong>Paso 1: Ejecución.</strong> Cada miembro completa sus "mini-informes" asignados (repartidos en la Tarea 1).</li>
+                    <li><strong>Paso 2: Conceptualización.</strong> Definid nombre, concepto y valores.</li>
                 </ul>
-            </div>
-        </div>
-      )}
-
-      {/* TAB 2: DISTRIBUTION */}
-      {activeTab === 'distribution' && (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl border border-gray-200">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <Users size={20} /> Panel de Reparto de Tareas
-                </h3>
-                
-                <p className="text-sm text-gray-600 mb-4">
-                    Asigna las micro-tareas de investigación a cada miembro del equipo.
-                </p>
-                
-                {/* Team Status */}
-                <div className="flex gap-4 mb-6 overflow-x-auto pb-2">
-                    {state.team.map(member => {
-                         const count = getTaskCount(member.id);
-                         let color = "bg-gray-100";
-                         if (count > 0 && count <= 2) color = "bg-green-100 text-green-800";
-                         if (count === 3) color = "bg-yellow-100 text-yellow-800";
-                         if (count >= 4) color = "bg-red-100 text-red-800";
-
-                         return (
-                            <div key={member.id} className={`p-3 rounded-lg min-w-[120px] text-center ${color}`}>
-                                <p className="font-bold text-sm">{member.name}</p>
-                                <p className="text-xs">{count} tareas</p>
-                            </div>
-                         )
-                    })}
-                </div>
-
-                {/* Assignment List */}
-                <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-700 uppercase">
-                            <tr>
-                                <th className="p-3">Micro-Tarea</th>
-                                <th className="p-3">Asignado a</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {state.task2.tasks.map(task => (
-                                <tr key={task.id} className="hover:bg-gray-50">
-                                    <td className="p-3">
-                                        <div className="font-medium text-gray-900">{task.title}</div>
-                                        <div className="text-xs text-gray-500">{task.description}</div>
-                                    </td>
-                                    <td className="p-3">
-                                        <select 
-                                            className="border p-2 rounded w-full max-w-[200px] bg-white"
-                                            value={task.assignedToId || ''}
-                                            onChange={(e) => assignTask(task.id, e.target.value)}
-                                        >
-                                            <option value="">-- Sin asignar --</option>
-                                            {state.team.map(m => (
-                                                <option key={m.id} value={m.id}>{m.name}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
       )}
