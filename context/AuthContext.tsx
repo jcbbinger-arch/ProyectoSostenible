@@ -11,6 +11,7 @@ import {
   doc, 
   getDoc, 
   setDoc, 
+  updateDoc,
   onSnapshot,
   FirebaseUser
 } from '../firebase';
@@ -64,7 +65,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           unsubProfile = onSnapshot(userRef, async (docSnap) => {
             if (docSnap.exists()) {
-              setProfile(docSnap.data() as UserProfile);
+              const data = docSnap.data() as UserProfile;
+              const isAdminEmail = firebaseUser.email === 'jcbbinger@gmail.com' || firebaseUser.email === 'managerproapp@gmail.com';
+              
+              // Force admin role if email matches but role is student
+              if (isAdminEmail && (data.role !== 'admin' || data.status !== 'approved')) {
+                const updatedProfile = { 
+                  ...data, 
+                  role: 'admin' as const, 
+                  status: 'approved' as const 
+                };
+                try {
+                  await updateDoc(userRef, updatedProfile);
+                  // The snapshot will trigger again with the new data
+                } catch (err) {
+                  console.error("Error forcing admin role:", err);
+                  setProfile(updatedProfile);
+                }
+              } else {
+                setProfile(data);
+              }
               setLoading(false);
             } else {
               // Crear perfil si no existe
