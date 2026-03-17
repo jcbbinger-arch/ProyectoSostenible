@@ -199,11 +199,17 @@ export const CoEvaluation: React.FC = () => {
             </p>
         </div>
 
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 text-sm text-red-800 flex items-start gap-3">
-            <Lock className="shrink-0 mt-1" size={18} />
+        <div className="bg-red-50 border-l-4 border-red-500 p-6 mb-8 text-sm text-red-800 flex items-start gap-4 rounded-r-xl shadow-sm">
+            <Lock className="shrink-0 mt-1 text-red-600" size={24} />
             <div>
-                <strong>Confidencialidad Garantizada:</strong> Esta evaluación NO aparecerá en la memoria final del proyecto.
-                Debes guardar cada evaluación y luego imprimir el informe global para el profesor.
+                <h3 className="font-black text-lg mb-1 uppercase tracking-tight">Zona de Alta Confidencialidad</h3>
+                <p className="leading-relaxed">
+                    <strong>Privacidad Estricta:</strong> Esta evaluación es 100% privada. Los compañeros <strong>NO</strong> pueden ver tus notas ni tus comentarios. 
+                    Esta información solo es accesible para el profesor a través del informe global que debes imprimir al finalizar.
+                </p>
+                <div className="mt-3 flex items-center gap-2 text-xs font-bold bg-red-100 w-fit px-3 py-1 rounded-full border border-red-200">
+                    <AlertTriangle size={14} /> NO compartas tu pantalla mientras realizas esta tarea.
+                </div>
             </div>
         </div>
 
@@ -329,8 +335,12 @@ export const CoEvaluation: React.FC = () => {
                             INFORME CONFIDENCIAL
                         </h1>
                         <h2 className="text-2xl font-bold text-gray-700 uppercase">
-                            DE COEVALUACIÓN
+                            DE COEVALUACIÓN (PRIVADO)
                         </h2>
+                    </div>
+                    
+                    <div className="mt-8 p-4 border-2 border-red-600 text-red-600 font-black uppercase tracking-widest rotate-[-5deg] inline-block">
+                        SOLO PARA EL PROFESOR
                     </div>
                     
                     <p className="text-2xl text-gray-900 font-bold mb-2">{state.teamName}</p>
