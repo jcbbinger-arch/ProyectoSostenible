@@ -39,41 +39,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubProfile: (() => void) | undefined;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       
+      // Limpiar listener previo si existe
+      if (unsubProfile) {
+        unsubProfile();
+        unsubProfile = undefined;
+      }
+
       if (firebaseUser) {
         const userRef = doc(db, 'users', firebaseUser.uid);
         
-        // Listen to profile changes in real-time
-        const unsubProfile = onSnapshot(userRef, async (docSnap) => {
-          if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile);
-          } else {
-            // Create new profile if it doesn't exist
-            const isAdmin = firebaseUser.email === 'managerproapp@gmail.com';
-            const newProfile: UserProfile = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || '',
-              photoURL: firebaseUser.photoURL || '',
-              role: isAdmin ? 'admin' : 'student',
-              status: isAdmin ? 'approved' : 'pending',
-            };
-            await setDoc(userRef, newProfile);
-            setProfile(newProfile);
-          }
+        try {
+          unsubProfile = onSnapshot(userRef, async (docSnap) => {
+            if (docSnap.exists()) {
+              setProfile(docSnap.data() as UserProfile);
+              setLoading(false);
+            } else {
+              // Crear perfil si no existe
+              const isAdmin = firebaseUser.email === 'jcbbinger@gmail.com' || firebaseUser.email === 'managerproapp@gmail.com';
+              const newProfile: UserProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                displayName: firebaseUser.displayName || '',
+                photoURL: firebaseUser.photoURL || '',
+                role: isAdmin ? 'admin' : 'student',
+                status: isAdmin ? 'approved' : 'pending',
+              };
+              try {
+                await setDoc(userRef, newProfile);
+                setProfile(newProfile);
+              } catch (err) {
+                console.error("Error creating profile:", err);
+              }
+              setLoading(false);
+            }
+          }, (error) => {
+            console.error("Profile Snapshot Error:", error);
+            setLoading(false); // No quedarse atrapado en carga si falla el snapshot
+          });
+        } catch (err) {
+          console.error("Error setting up profile listener:", err);
           setLoading(false);
-        });
-
-        return () => unsubProfile();
+        }
       } else {
         setProfile(null);
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubProfile) unsubProfile();
+    };
   }, []);
 
   const login = async () => {

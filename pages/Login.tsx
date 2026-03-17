@@ -1,9 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, ShieldCheck, Users, Globe } from 'lucide-react';
+import { LogIn, ShieldCheck, Users, Globe, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    setIsLoggingIn(true);
+    setError(null);
+    try {
+      await login();
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      if (err.code === 'auth/popup-blocked') {
+        setError("El navegador bloqueó la ventana. Por favor, permite los pop-ups o usa el botón 'Abrir en pestaña nueva' de abajo.");
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setError("Dominio no autorizado. Asegúrate de añadir este dominio en la consola de Firebase.");
+      } else {
+        setError("Error al iniciar sesión. Prueba a abrir la app en una pestaña nueva.");
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const openInNewTab = () => {
+    window.open(window.location.href, '_blank');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4 overflow-hidden relative">
@@ -19,42 +44,45 @@ export const Login: React.FC = () => {
             <Globe className="w-10 h-10 text-emerald-400" />
           </div>
           <h1 className="text-3xl font-black text-white mb-2 tracking-tight">Murcia Sostenible</h1>
-          <p className="text-slate-400 font-medium">Plataforma de Gestión de Proyectos Educativos</p>
+          <p className="text-slate-400 font-medium">Plataforma de Gestión de Proyectos</p>
         </div>
 
-        <div className="space-y-6 mb-10">
-          <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">Colaboración Real</p>
-              <p className="text-xs text-slate-400">Trabaja con tu equipo en tiempo real desde cualquier lugar.</p>
-            </div>
+        {error && (
+          <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <p>{error}</p>
           </div>
+        )}
 
-          <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">Acceso Seguro</p>
-              <p className="text-xs text-slate-400">Tus proyectos están protegidos y supervisados por el profesor.</p>
-            </div>
-          </div>
+        <div className="space-y-4 mb-8">
+          <button
+            onClick={handleLogin}
+            disabled={isLoggingIn}
+            className="w-full flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-4 rounded-2xl font-black hover:bg-emerald-400 hover:text-slate-900 transition-all active:scale-95 shadow-lg shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoggingIn ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <LogIn className="w-6 h-6" />
+            )}
+            {isLoggingIn ? 'Iniciando sesión...' : 'Entrar con Google'}
+          </button>
+
+          <button
+            onClick={openInNewTab}
+            className="w-full flex items-center justify-center gap-3 bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold hover:bg-slate-700 transition-all border border-slate-700 text-sm"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Abrir en pestaña nueva
+          </button>
         </div>
 
-        <button
-          onClick={login}
-          className="w-full flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-4 rounded-2xl font-black hover:bg-emerald-400 hover:text-slate-900 transition-all active:scale-95 shadow-lg shadow-white/5"
-        >
-          <LogIn className="w-6 h-6" />
-          Entrar con Google
-        </button>
-
-        <p className="text-center mt-8 text-xs text-slate-500 font-medium">
-          Al entrar, aceptas las condiciones de uso de la plataforma educativa.
-        </p>
+        <div className="space-y-4 pt-6 border-t border-white/5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+            <p className="text-xs text-slate-400">Si el login falla, es debido a las restricciones del marco de IA Studio. Usa el botón de arriba.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
