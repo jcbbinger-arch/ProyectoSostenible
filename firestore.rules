@@ -22,17 +22,24 @@ service cloud.firestore {
       );
     }
 
+    function isAssistant() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'assistant' ||
+        isAdmin()
+      );
+    }
+
     function isApproved() {
       return isAuthenticated() && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved' ||
-        isAdmin()
+        isAssistant()
       );
     }
 
     function isProjectMember(projectId) {
       return isAuthenticated() && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.projectId == projectId ||
-        isAdmin()
+        isAssistant()
       );
     }
 
@@ -44,7 +51,7 @@ service cloud.firestore {
       return data.keys().hasAll(['uid', 'email', 'role', 'status']) &&
              data.uid is string &&
              data.email is string &&
-             data.role in ['admin', 'student'] &&
+             data.role in ['admin', 'student', 'assistant'] &&
              data.status in ['pending', 'approved'];
     }
 

@@ -23,20 +23,39 @@ import { Login } from './pages/Login';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { WaitingRoom } from './components/WaitingRoom';
 import { ProjectAccess } from './components/ProjectAccess';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Ghost } from 'lucide-react';
 
 // Layout wrapper to conditionally show Sidebar
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isLanding = location.pathname === '/';
-  const { profile } = useAuth();
+  const { profile, realProfile, impersonateUser } = useAuth();
   const isAdmin = profile?.role === 'admin';
+  const isImpersonating = realProfile?.impersonatingUid != null;
 
   return (
     <div className="flex bg-gray-50 min-h-screen font-sans text-gray-900">
+      {isImpersonating && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-blue-600 text-white px-4 py-2 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-1.5 rounded-lg">
+              <Ghost size={18} />
+            </div>
+            <p className="text-sm font-bold">
+              MODO SUPLANTACIÓN: <span className="underline">{profile?.displayName}</span> ({profile?.email})
+            </p>
+          </div>
+          <button 
+            onClick={() => impersonateUser(null)}
+            className="bg-white text-blue-600 px-4 py-1 rounded-full text-xs font-bold hover:bg-blue-50 transition-colors"
+          >
+            Detener Suplantación
+          </button>
+        </div>
+      )}
       {!isLanding && !isAdmin && <Sidebar />}
       
-      <main className={`flex-1 transition-all duration-300 ${!isLanding && !isAdmin ? 'ml-64 print:ml-0 print:w-full' : ''}`}>
+      <main className={`flex-1 transition-all duration-300 ${!isLanding && !isAdmin ? 'ml-64 print:ml-0 print:w-full' : ''} ${isImpersonating ? 'pt-12' : ''}`}>
         {children}
       </main>
     </div>

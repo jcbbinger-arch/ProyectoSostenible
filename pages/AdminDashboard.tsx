@@ -12,7 +12,11 @@ import {
   Clock,
   ExternalLink,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  UserCog,
+  UserCheck,
+  Ghost,
+  ShieldAlert
 } from 'lucide-react';
 
 interface UserProfile {
@@ -20,7 +24,7 @@ interface UserProfile {
   email: string;
   displayName: string;
   photoURL: string;
-  role: string;
+  role: 'admin' | 'student' | 'assistant';
   status: 'pending' | 'approved';
   projectId?: string;
 }
@@ -36,18 +40,27 @@ interface ProjectSummary {
 }
 
 export const AdminDashboard: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, realProfile, impersonateUser } = useAuth();
   const [pendingUsers, setPendingUsers] = useState<UserProfile[]>([]);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectSummary[]>([]);
   const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'audit'>('users');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const isSuperAdmin = realProfile?.role === 'admin';
+
   useEffect(() => {
-    if (profile?.role !== 'admin') return;
+    if (realProfile?.role !== 'admin' && realProfile?.role !== 'assistant') return;
+
+    // Listen to all users
+    const qAllUsers = query(collection(db, 'users'));
+    const unsubAllUsers = onSnapshot(qAllUsers, (snapshot) => {
+      setAllUsers(snapshot.docs.map(d => d.data() as UserProfile));
+    });
 
     // Listen to pending users
-    const qUsers = query(collection(db, 'users'), where('status', '==', 'pending'));
-    const unsubUsers = onSnapshot(qUsers, (snapshot) => {
+    const qPending = query(collection(db, 'users'), where('status', '==', 'pending'));
+    const unsubPending = onSnapshot(qPending, (snapshot) => {
       setPendingUsers(snapshot.docs.map(d => d.data() as UserProfile));
     });
 
@@ -58,12 +71,14 @@ export const AdminDashboard: React.FC = () => {
     });
 
     return () => {
-      unsubUsers();
+      unsubAllUsers();
+      unsubPending();
       unsubProjects();
     };
-  }, [profile]);
+  }, [realProfile]);
 
   const approveUser = async (uid: string) => {
+    if (!isSuperAdmin) return;
     try {
       await updateDoc(doc(db, 'users', uid), { status: 'approved' });
     } catch (error) {
@@ -71,18 +86,26 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const enterProject = async (projectId: string) => {
-    if (!profile?.uid) return;
+  const handleRoleChange = async (uid: string, newRole: 'admin' | 'student' | 'assistant') => {
+    if (!isSuperAdmin) return;
     try {
-      await updateDoc(doc(db, 'users', profile.uid), { projectId });
-      // App.tsx will pick up the change and show the project view
+      await updateDoc(doc(db, 'users', uid), { role: newRole });
+    } catch (error) {
+      console.error("Error changing role:", error);
+    }
+  };
+
+  const enterProject = async (projectId: string) => {
+    if (!realProfile?.uid) return;
+    try {
+      await updateDoc(doc(db, 'users', realProfile.uid), { projectId });
     } catch (error) {
       console.error("Error entering project:", error);
     }
   };
 
   const rejectUser = async (uid: string) => {
-    // In a real app, we might delete the user or mark as rejected
+    if (!isSuperAdmin) return;
     try {
       await deleteDoc(doc(db, 'users', uid));
     } catch (error) {
@@ -90,7 +113,7 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const filteredUsers = pendingUsers.filter(u => 
+  const filteredUsers = allUsers.filter(u => 
     u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -182,34 +205,83 @@ export const AdminDashboard: React.FC = () => {
             {filteredUsers.length === 0 ? (
               <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
                 <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500 font-medium">No hay usuarios pendientes de aprobación.</p>
+                <p className="text-slate-500 font-medium">No se encontraron usuarios.</p>
               </div>
             ) : (
               filteredUsers.map((user) => (
-                <div key={user.uid} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all">
-                  <div className="flex items-center gap-4 mb-6">
-                    <img src={user.photoURL} alt="" className="w-12 h-12 rounded-full" />
-                    <div className="overflow-hidden">
+                <div key={user.uid} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col">
+                  <div className="flex items-center gap-4 mb-4">
+                    <img src={user.photoURL} alt="" className="w-12 h-12 rounded-full border-2 border-slate-100" />
+                    <div className="overflow-hidden flex-1">
                       <h3 className="font-bold text-slate-900 truncate">{user.displayName}</h3>
                       <p className="text-xs text-slate-500 truncate">{user.email}</p>
                     </div>
+                    {user.status === 'approved' ? (
+                      <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                    ) : (
+                      <Clock className="w-5 h-5 text-amber-500 shrink-0" />
+                    )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Rol del Usuario</label>
+                    <div className="flex gap-1">
+                      {(['student', 'assistant', 'admin'] as const).map((role) => (
+                        <button
+                          key={role}
+                          disabled={!isSuperAdmin || user.uid === realProfile?.uid}
+                          onClick={() => handleRoleChange(user.uid, role)}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                            user.role === role 
+                              ? 'bg-slate-900 text-white shadow-sm' 
+                              : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {role === 'admin' ? 'ADMIN' : role === 'assistant' ? 'ASISTENTE' : 'ALUMNO'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => approveUser(user.uid)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 py-2 rounded-xl font-bold hover:bg-emerald-600 hover:text-white transition-all"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      Aprobar
-                    </button>
-                    <button
-                      onClick={() => rejectUser(user.uid)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-xl font-bold hover:bg-red-600 hover:text-white transition-all"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Rechazar
-                    </button>
+                  <div className="mt-auto flex gap-2">
+                    {user.status === 'pending' ? (
+                      <>
+                        <button
+                          onClick={() => approveUser(user.uid)}
+                          disabled={!isSuperAdmin}
+                          className="flex-1 flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Aprobar
+                        </button>
+                        <button
+                          onClick={() => rejectUser(user.uid)}
+                          disabled={!isSuperAdmin}
+                          className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Rechazar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => impersonateUser(user.uid)}
+                          className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all"
+                        >
+                          <Ghost className="w-4 h-4" />
+                          Suplantar
+                        </button>
+                        {isSuperAdmin && user.uid !== realProfile?.uid && (
+                          <button
+                            onClick={() => rejectUser(user.uid)}
+                            className="w-10 flex items-center justify-center bg-slate-50 text-slate-400 py-2 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               ))
