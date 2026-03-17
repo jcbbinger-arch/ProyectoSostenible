@@ -170,22 +170,83 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const selectZone = (zone: Zone) => setState(prev => ({ ...prev, selectedZone: zone }));
   const updateZoneJustification = (text: string) => setState(prev => ({ ...prev, zoneJustification: text }));
   const assignTask = (taskId: number, memberId: string | null) => setState(prev => ({ ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, assignedToId: memberId } : t) } }));
-  const updateTaskContent = (taskId: number, content: string) => setState(prev => ({ ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, content: content } : t) } }));
+  const updateTaskContent = (taskId: number, content: string) => {
+    setState(prev => {
+      const task = prev.task2.tasks.find(t => t.id === taskId);
+      if (task && task.assignedToId !== prev.currentUser) {
+        console.warn("Permission denied: You can only edit your assigned tasks.");
+        return prev;
+      }
+      return { ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, content: content } : t) } };
+    });
+  };
   const updateConcept = (key: keyof ProjectState['concept'], value: any) => setState(prev => ({ ...prev, concept: { ...prev.concept, [key]: value } }));
   const updateMission = (role: keyof ProjectState['missions'], data: any) => setState(prev => ({ ...prev, missions: { ...prev.missions, [role]: { ...prev.missions[role], ...data } } }));
   const addDish = (dish: Dish) => setState(prev => ({ ...prev, dishes: [...prev.dishes, { ...dish, author: dish.author || state.currentUser || '' }] }));
-  const removeDish = (id: string) => setState(prev => ({ ...prev, dishes: prev.dishes.filter(d => d.id !== id) }));
-  const updateDish = (dish: Dish) => setState(prev => ({ ...prev, dishes: prev.dishes.map(d => d.id === dish.id ? dish : d) }));
-  const updateMenuPrototype = (data: Partial<MenuPrototype>) => setState(prev => ({ ...prev, menuPrototype: { ...prev.menuPrototype, ...data } }));
-  const updateTask6Roles = (roles: Partial<Task6Roles>) => setState(prev => ({ ...prev, task6: { ...prev.task6, ...roles } }));
+  const removeDish = (id: string) => {
+    setState(prev => {
+      const dish = prev.dishes.find(d => d.id === id);
+      if (dish && dish.author !== prev.currentUser) {
+        console.warn("Permission denied: You can only remove your own dishes.");
+        return prev;
+      }
+      return { ...prev, dishes: prev.dishes.filter(d => d.id !== id) };
+    });
+  };
+  const updateDish = (dish: Dish) => {
+    setState(prev => {
+      const existing = prev.dishes.find(d => d.id === dish.id);
+      if (existing && existing.author !== prev.currentUser) {
+        console.warn("Permission denied: You can only update your own dishes.");
+        return prev;
+      }
+      return { ...prev, dishes: prev.dishes.map(d => d.id === dish.id ? dish : d) };
+    });
+  };
+  const updateMenuPrototype = (data: Partial<MenuPrototype>) => {
+    setState(prev => {
+      const currentUserMember = prev.team.find(m => m.id === prev.currentUser);
+      const isCoordinator = currentUserMember?.isCoordinator || false;
+      const isDesigner = prev.task6.designerIds.includes(prev.currentUser || '');
+      const isArtisan = prev.task6.artisanIds.includes(prev.currentUser || '');
+      const noRolesAssigned = prev.task6.designerIds.length === 0 && prev.task6.artisanIds.length === 0 && prev.task6.editorIds.length === 0;
+
+      if (isCoordinator || noRolesAssigned) {
+        return { ...prev, menuPrototype: { ...prev.menuPrototype, ...data } };
+      }
+
+      const keys = Object.keys(data);
+      const canEditDigital = isDesigner && (keys.includes('digitalLink') || keys.includes('digitalDescription'));
+      const canEditPhysical = isArtisan && (keys.includes('physicalPhoto') || keys.includes('physicalDescription'));
+      
+      if (canEditDigital || canEditPhysical) {
+        return { ...prev, menuPrototype: { ...prev.menuPrototype, ...data } };
+      }
+
+      return prev;
+    });
+  };
+  const updateTask6Roles = (roles: Partial<Task6Roles>) => {
+    setState(prev => {
+      const currentUserMember = prev.team.find(m => m.id === prev.currentUser);
+      if (!currentUserMember?.isCoordinator) return prev;
+      return { ...prev, task6: { ...prev.task6, ...roles } };
+    });
+  };
   
-  const updateInterimReport = (data: any) => setState(prev => ({
-    ...prev,
-    interimReport: {
-      ...prev.interimReport,
-      ...data
-    }
-  }));
+  const updateInterimReport = (data: any) => {
+    setState(prev => {
+      const currentUserMember = prev.team.find(m => m.id === prev.currentUser);
+      const isCoordinator = currentUserMember?.isCoordinator || false;
+      const isEditor = prev.task6.editorIds.includes(prev.currentUser || '');
+      const noRolesAssigned = prev.task6.designerIds.length === 0 && prev.task6.artisanIds.length === 0 && prev.task6.editorIds.length === 0;
+
+      if (isCoordinator || isEditor || noRolesAssigned) {
+        return { ...prev, interimReport: { ...prev.interimReport, ...data } };
+      }
+      return prev;
+    });
+  };
 
   const updateSeasonalProducts = (data: Partial<SeasonalProductContribution>) => {
       if (!state.currentUser) return;
@@ -214,7 +275,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
   };
 
-  const savePeerReview = (review: PeerReview) => setState(prev => ({ ...prev, coEvaluations: [...prev.coEvaluations.filter(r => !(r.evaluatorId === review.evaluatorId && r.targetId === review.targetId)), review] }));
+  const savePeerReview = (review: PeerReview) => {
+    setState(prev => {
+      if (review.evaluatorId !== prev.currentUser) return prev;
+      return { ...prev, coEvaluations: [...prev.coEvaluations.filter(r => !(r.evaluatorId === review.evaluatorId && r.targetId === review.targetId)), review] };
+    });
+  };
   
   const resetProject = () => {
     setState(INITIAL_STATE);

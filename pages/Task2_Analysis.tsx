@@ -14,8 +14,9 @@ export const Task2_Analysis: React.FC = () => {
   // Helper to count tasks per member
   const getTaskCount = (memberId: string) => state.task2.tasks.filter(t => t.assignedToId === memberId).length;
 
-  // PERMISOS: Todos tienen permisos de edición (equipo colaborativo total)
-  const isCoordinator = true;
+  // PERMISOS: Solo el coordinador puede editar la parte grupal
+  const currentUserMember = state.team.find(m => m.id === state.currentUser);
+  const isCoordinator = currentUserMember?.isCoordinator || false;
 
   const handleSaveConcept = () => {
     // Visual feedback for the user (data is already in state/localStorage via onChange)
@@ -86,8 +87,8 @@ export const Task2_Analysis: React.FC = () => {
                 const isExpanded = expandedTask === task.id;
                 const isCompleted = task.content.length > 20;
                 
-                // LOCK LOGIC: Everyone can edit everything now
-                const isLocked = false; 
+                // LOCK LOGIC: Only the assigned member can edit
+                const isLocked = task.assignedToId !== state.currentUser; 
 
                 return (
                     <div key={task.id} className={`bg-white border rounded-xl transition-all ${isExpanded ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'}`}>
@@ -102,6 +103,7 @@ export const Task2_Analysis: React.FC = () => {
                                 <div>
                                     <h4 className="font-bold text-gray-800 flex items-center gap-2">
                                         {task.title}
+                                        {isLocked && <Lock size={14} className="text-gray-400" />}
                                     </h4>
                                     <p className="text-xs text-gray-500">
                                         Responsable: <span className="font-medium text-blue-600">{assignee ? assignee.name : 'Sin asignar'}</span>
@@ -113,14 +115,22 @@ export const Task2_Analysis: React.FC = () => {
 
                         {isExpanded && (
                             <div className="p-4 border-t bg-gray-50 rounded-b-xl">
-                                <div className="mb-2 text-xs text-gray-500 font-medium uppercase">
-                                    Entregable esperado: {task.deliverableHint}
+                                <div className="mb-2 flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 font-medium uppercase">
+                                        Entregable esperado: {task.deliverableHint}
+                                    </div>
+                                    {isLocked && (
+                                        <div className="flex items-center gap-1 text-amber-600 text-[10px] font-bold uppercase">
+                                            <Lock size={10} /> Solo lectura
+                                        </div>
+                                    )}
                                 </div>
                                 <textarea 
-                                    className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[150px]"
-                                    placeholder="Escribe aquí tu mini-informe..."
+                                    className={`w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[150px] ${isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''}`}
+                                    placeholder={isLocked ? "Esta tarea está asignada a otro compañero..." : "Escribe aquí tu mini-informe..."}
                                     value={task.content}
                                     onChange={(e) => updateTaskContent(task.id, e.target.value)}
+                                    disabled={isLocked}
                                 />
                                 <div className="mt-2 text-right">
                                     <span className="text-xs text-gray-400">{task.content.length} caracteres</span>
@@ -136,22 +146,32 @@ export const Task2_Analysis: React.FC = () => {
       {/* TAB 4: CONCEPTUALIZATION */}
       {activeTab === 'concept' && (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-             <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                <Lightbulb className="text-yellow-500" /> Decisión Grupal: El Concepto
-            </h3>
+             <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <Lightbulb className="text-yellow-500" /> Decisión Grupal: El Concepto
+                </h3>
+                {!isCoordinator && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200">
+                        <Lock size={14} /> Solo el Coordinador puede editar
+                    </div>
+                )}
+            </div>
 
-            <p className="text-sm text-gray-600 mb-6">
-                Tras analizar toda la información, definid la identidad del restaurante. (Cualquier miembro puede registrar los datos).
+            <p className="text-sm text-gray-600 mb-6 italic">
+                {isCoordinator 
+                    ? "Como coordinador/a, eres responsable de registrar la identidad final del restaurante acordada por el equipo."
+                    : "Aquí puedes ver la identidad del restaurante definida por tu equipo (solo el coordinador/a puede modificarla)."}
             </p>
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Nombre del Restaurante</label>
                     <input 
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!isCoordinator ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                         placeholder="Ej: Raíces del Valle"
                         value={state.concept.name}
                         onChange={(e) => updateConcept('name', e.target.value)}
+                        disabled={!isCoordinator}
                     />
                 </div>
                 <div>
@@ -160,31 +180,35 @@ export const Task2_Analysis: React.FC = () => {
                         {state.concept.restaurantLogo ? (
                             <div className="relative group">
                                 <img src={state.concept.restaurantLogo} alt="Logo" className="h-16 w-16 object-contain border rounded bg-gray-50" />
-                                <button 
-                                    onClick={() => updateConcept('restaurantLogo', null)}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <Trash size={12} />
-                                </button>
+                                {isCoordinator && (
+                                    <button 
+                                        onClick={() => updateConcept('restaurantLogo', null)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <Trash size={12} />
+                                    </button>
+                                )}
                             </div>
                         ) : (
-                            <label className="flex flex-col items-center justify-center w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                            <label className={`flex flex-col items-center justify-center w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg transition-all ${isCoordinator ? 'cursor-pointer hover:border-blue-500 hover:bg-blue-50' : 'bg-gray-50 cursor-not-allowed'}`}>
                                 <ImageIcon className="text-gray-400" size={24} />
-                                <input 
-                                    type="file" 
-                                    className="hidden" 
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
-                                                updateConcept('restaurantLogo', reader.result as string);
-                                            };
-                                            reader.readAsDataURL(file);
-                                        }
-                                    }}
-                                />
+                                {isCoordinator && (
+                                    <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    updateConcept('restaurantLogo', reader.result as string);
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                    />
+                                )}
                             </label>
                         )}
                         <span className="text-xs text-gray-400">Sube el logo de tu marca si ya lo tienes diseñado.</span>
@@ -195,19 +219,21 @@ export const Task2_Analysis: React.FC = () => {
             <div className="mb-6">
                  <label className="block text-sm font-bold text-gray-700 mb-2">Propuesta de Valor (Eslogan)</label>
                  <input 
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!isCoordinator ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     placeholder="El eslogan que os define..."
                     value={state.concept.slogan}
                     onChange={(e) => updateConcept('slogan', e.target.value)}
+                    disabled={!isCoordinator}
                 />
             </div>
 
             <div className="mb-6">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Público Objetivo Final</label>
                 <textarea 
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24 ${!isCoordinator ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     value={state.concept.targetAudience}
                     onChange={(e) => updateConcept('targetAudience', e.target.value)}
+                    disabled={!isCoordinator}
                 />
             </div>
 
@@ -217,7 +243,7 @@ export const Task2_Analysis: React.FC = () => {
                     {[0, 1, 2].map((i) => (
                         <input 
                             key={i}
-                            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className={`flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!isCoordinator ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                             placeholder={`Valor ${i + 1}`}
                             value={state.concept.values[i] || ''}
                             onChange={(e) => {
@@ -225,26 +251,29 @@ export const Task2_Analysis: React.FC = () => {
                                 newValues[i] = e.target.value;
                                 updateConcept('values', newValues);
                             }}
+                            disabled={!isCoordinator}
                         />
                     ))}
                 </div>
             </div>
 
             {/* SAVE BUTTON SECTION */}
-            <div className="mt-8 flex items-center justify-end gap-4 border-t pt-6">
-                {showSaveSuccess && (
-                    <div className="flex items-center gap-2 text-green-600 font-bold animate-pulse">
-                        <CheckCircle size={20} />
-                        <span>¡Cambios guardados correctamente!</span>
-                    </div>
-                )}
-                <button 
-                    onClick={handleSaveConcept}
-                    className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold shadow-md transition-all bg-green-600 text-white hover:bg-green-700 hover:scale-105"
-                >
-                    <Save size={20} /> Guardar Decisión
-                </button>
-            </div>
+            {isCoordinator && (
+                <div className="mt-8 flex items-center justify-end gap-4 border-t pt-6">
+                    {showSaveSuccess && (
+                        <div className="flex items-center gap-2 text-green-600 font-bold animate-pulse">
+                            <CheckCircle size={20} />
+                            <span>¡Cambios guardados correctamente!</span>
+                        </div>
+                    )}
+                    <button 
+                        onClick={handleSaveConcept}
+                        className="flex items-center gap-2 px-6 py-3 rounded-lg font-bold shadow-md transition-all bg-green-600 text-white hover:bg-green-700 hover:scale-105"
+                    >
+                        <Save size={20} /> Guardar Decisión
+                    </button>
+                </div>
+            )}
         </div>
       )}
 

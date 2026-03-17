@@ -10,8 +10,12 @@ export const Task5_Financials: React.FC = () => {
   const [selectedDishId, setSelectedDishId] = useState<string>('');
   const [currentDish, setCurrentDish] = useState<Dish | null>(null);
 
-  // PERMISOS: Todos los usuarios pueden ver y escandallar todos los platos
+  // PERMISOS
+  const currentUserMember = state.team.find(m => m.id === state.currentUser);
+  const isCoordinator = currentUserMember?.isCoordinator || false;
   const availableDishes = state.dishes;
+  const isAuthor = currentDish?.author === state.currentUser;
+  const canEdit = isAuthor || isCoordinator;
 
   useEffect(() => {
     if (selectedDishId) {
@@ -139,8 +143,16 @@ export const Task5_Financials: React.FC = () => {
 
             {currentDish ? (
                 <div className="animate-fade-in pb-20">
+                    {!canEdit && (
+                        <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl flex items-center gap-3 mb-6">
+                            <AlertTriangle className="text-orange-600" />
+                            <p className="text-sm text-orange-800">
+                                <strong>Modo Lectura:</strong> Solo el autor del plato ({state.team.find(m => m.id === currentDish.author)?.name}) o el Coordinador pueden editar este escandallo.
+                            </p>
+                        </div>
+                    )}
                     {/* === PROFESIONAL ESCANDALLO SHEET === */}
-                    <div className="bg-white border-[3px] border-black shadow-2xl overflow-hidden max-w-5xl mx-auto">
+                    <div className={`bg-white border-[3px] border-black shadow-2xl overflow-hidden max-w-5xl mx-auto ${!canEdit ? 'opacity-80' : ''}`}>
                         
                         {/* CABECERA */}
                         <div className="bg-[#bfdbfe] text-center py-6 border-b-[3px] border-black">
@@ -152,18 +164,20 @@ export const Task5_Financials: React.FC = () => {
                             <div className="flex-[2] border-r-[3px] border-black p-3 flex flex-col justify-between">
                                 <span className="font-black text-[10px] uppercase text-gray-500">Denominación</span>
                                 <input 
-                                    className="text-xl font-bold w-full bg-transparent focus:outline-none focus:text-blue-700" 
+                                    className={`text-xl font-bold w-full bg-transparent focus:outline-none focus:text-blue-700 ${!canEdit ? 'cursor-not-allowed' : ''}`} 
                                     value={currentDish.name} 
-                                    onChange={(e) => setCurrentDish({...currentDish, name: e.target.value})}
+                                    onChange={(e) => canEdit && setCurrentDish({...currentDish, name: e.target.value})}
+                                    disabled={!canEdit}
                                 />
                             </div>
                             <div className="flex-1 border-r-[3px] border-black p-3 flex flex-col justify-between">
                                 <span className="font-black text-[10px] uppercase text-gray-500">Nº Raciones</span>
                                 <input 
                                     type="number"
-                                    className="text-xl font-bold w-full bg-transparent text-center focus:outline-none focus:text-blue-700" 
+                                    className={`text-xl font-bold w-full bg-transparent text-center focus:outline-none focus:text-blue-700 ${!canEdit ? 'cursor-not-allowed' : ''}`} 
                                     value={currentDish.servings} 
-                                    onChange={(e) => setCurrentDish({...currentDish, servings: parseInt(e.target.value) || 1})}
+                                    onChange={(e) => canEdit && setCurrentDish({...currentDish, servings: parseInt(e.target.value) || 1})}
+                                    disabled={!canEdit}
                                 />
                             </div>
                             <div className="flex-1 p-3 flex flex-col justify-between bg-gray-50">
@@ -193,9 +207,10 @@ export const Task5_Financials: React.FC = () => {
                                     {/* PRODUCTO */}
                                     <div className="flex-[2] border-r border-black h-full">
                                         <input 
-                                            className="w-full h-full px-3 bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-medium"
+                                            className={`w-full h-full px-3 bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-medium ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                             value={ing.name}
-                                            onChange={(e) => handleIngredientChange(ing.id, 'name', e.target.value)}
+                                            onChange={(e) => canEdit && handleIngredientChange(ing.id, 'name', e.target.value)}
+                                            disabled={!canEdit}
                                         />
                                     </div>
                                     
@@ -203,19 +218,21 @@ export const Task5_Financials: React.FC = () => {
                                     <div className="w-24 border-r border-black h-full">
                                         <input 
                                             type="number"
-                                            className="w-full h-full text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-bold"
+                                            className={`w-full h-full text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-bold ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                             value={ing.quantity || ''}
-                                            onChange={(e) => handleIngredientChange(ing.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                            onChange={(e) => canEdit && handleIngredientChange(ing.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                            disabled={!canEdit}
                                         />
                                     </div>
 
                                     {/* UNIDAD */}
                                     <div className="w-24 border-r border-black h-full">
                                         <input 
-                                            className="w-full h-full text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none uppercase text-[10px] font-black"
+                                            className={`w-full h-full text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none uppercase text-[10px] font-black ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                             value={ing.unit}
-                                            onChange={(e) => handleIngredientChange(ing.id, 'unit', e.target.value)}
+                                            onChange={(e) => canEdit && handleIngredientChange(ing.id, 'unit', e.target.value)}
                                             placeholder="kg/g/l..."
+                                            disabled={!canEdit}
                                         />
                                     </div>
                                     
@@ -223,9 +240,10 @@ export const Task5_Financials: React.FC = () => {
                                     <div className="flex-[0.75] border-r border-black h-full">
                                         <input 
                                             type="number" 
-                                            className="w-full h-full text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-bold text-blue-800"
+                                            className={`w-full h-full text-center bg-transparent focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-bold text-blue-800 ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                             value={ing.unitPrice || ''}
-                                            onChange={(e) => handleIngredientChange(ing.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                            onChange={(e) => canEdit && handleIngredientChange(ing.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                            disabled={!canEdit}
                                         />
                                     </div>
 
@@ -233,9 +251,10 @@ export const Task5_Financials: React.FC = () => {
                                     <div className="flex-[0.75] h-full">
                                         <input 
                                             type="number"
-                                            className="w-full h-full text-right pr-4 bg-gray-50/50 focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-mono font-bold"
+                                            className={`w-full h-full text-right pr-4 bg-gray-50/50 focus:bg-white focus:ring-inset focus:ring-2 focus:ring-blue-400 outline-none font-mono font-bold ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                             value={ing.totalCost || ''}
-                                            onChange={(e) => handleIngredientChange(ing.id, 'totalCost', parseFloat(e.target.value) || 0)}
+                                            onChange={(e) => canEdit && handleIngredientChange(ing.id, 'totalCost', parseFloat(e.target.value) || 0)}
+                                            disabled={!canEdit}
                                         />
                                     </div>
                                 </div>
@@ -260,9 +279,10 @@ export const Task5_Financials: React.FC = () => {
                                 <div className="w-44 h-full border-l border-black relative">
                                     <input 
                                         type="number"
-                                        className="w-full h-full text-right pr-10 bg-white focus:bg-yellow-50 font-black text-xl outline-none"
+                                        className={`w-full h-full text-right pr-10 bg-white focus:bg-yellow-50 font-black text-xl outline-none ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                         value={currentDish.financials.totalCost || ''}
-                                        onChange={(e) => handleFinancialInput('totalCost', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => canEdit && handleFinancialInput('totalCost', parseFloat(e.target.value) || 0)}
+                                        disabled={!canEdit}
                                     />
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-gray-400">€</span>
                                 </div>
@@ -273,9 +293,10 @@ export const Task5_Financials: React.FC = () => {
                                 <div className="w-44 h-full border-l border-black relative">
                                     <input 
                                         type="number"
-                                        className="w-full h-full text-right pr-10 bg-white focus:bg-yellow-50 font-bold outline-none"
+                                        className={`w-full h-full text-right pr-10 bg-white focus:bg-yellow-50 font-bold outline-none ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                         value={currentDish.financials.costPerServing || ''}
-                                        onChange={(e) => handleFinancialInput('costPerServing', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => canEdit && handleFinancialInput('costPerServing', parseFloat(e.target.value) || 0)}
+                                        disabled={!canEdit}
                                     />
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-gray-400">€</span>
                                 </div>
@@ -286,9 +307,10 @@ export const Task5_Financials: React.FC = () => {
                                 <div className="w-44 h-full border-l border-black relative">
                                     <input 
                                         type="number"
-                                        className="w-full h-full text-right pr-10 bg-white focus:bg-yellow-50 font-bold outline-none text-green-700"
+                                        className={`w-full h-full text-right pr-10 bg-white focus:bg-yellow-50 font-bold outline-none text-green-700 ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                         value={currentDish.financials.foodCostPercent || ''}
-                                        onChange={(e) => handleFinancialInput('foodCostPercent', parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => canEdit && handleFinancialInput('foodCostPercent', parseFloat(e.target.value) || 0)}
+                                        disabled={!canEdit}
                                     />
                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 font-black text-gray-400">%</span>
                                 </div>
@@ -301,9 +323,10 @@ export const Task5_Financials: React.FC = () => {
                                 <div className="w-44 h-full relative">
                                     <input 
                                         type="number"
-                                        className="w-full h-full text-right font-black text-3xl pr-12 bg-yellow-200 focus:bg-white outline-none transition-colors"
+                                        className={`w-full h-full text-right font-black text-3xl pr-12 bg-yellow-200 focus:bg-white outline-none transition-colors ${!canEdit ? 'cursor-not-allowed' : ''}`}
                                         value={currentDish.price || ''}
-                                        onChange={(e) => setCurrentDish({...currentDish, price: parseFloat(e.target.value) || 0})}
+                                        onChange={(e) => canEdit && setCurrentDish({...currentDish, price: parseFloat(e.target.value) || 0})}
+                                        disabled={!canEdit}
                                     />
                                     <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-2xl">€</span>
                                 </div>
@@ -312,14 +335,16 @@ export const Task5_Financials: React.FC = () => {
                     </div>
 
                     {/* Botón Guardar */}
-                    <div className="flex justify-center mt-12 mb-20">
-                         <button 
-                            onClick={saveEscandallo}
-                            className="bg-green-600 text-white px-12 py-5 rounded-2xl font-black text-xl hover:bg-green-700 shadow-2xl transition-all hover:scale-105 flex items-center gap-3"
-                        >
-                            <Save size={24} /> Guardar Escandallo Definitivo
-                        </button>
-                    </div>
+                    {canEdit && (
+                        <div className="flex justify-center mt-12 mb-20">
+                             <button 
+                                onClick={saveEscandallo}
+                                className="bg-green-600 text-white px-12 py-5 rounded-2xl font-black text-xl hover:bg-green-700 shadow-2xl transition-all hover:scale-105 flex items-center gap-3"
+                            >
+                                <Save size={24} /> Guardar Escandallo Definitivo
+                            </button>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="text-center py-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl">

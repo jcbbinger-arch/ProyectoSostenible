@@ -7,14 +7,15 @@ export const Task6_FinalAssembly: React.FC = () => {
   const { state, updateTask6Roles } = useProject();
   const [activeTab, setActiveTab] = useState<'instructions' | 'roles' | 'supervision'>('instructions');
 
-  // PERMISOS: Todos son coordinadores (edición total)
-  const isCoordinator = true;
+  // PERMISOS
+  const currentUserMember = state.team.find(m => m.id === state.currentUser);
+  const isCoordinator = currentUserMember?.isCoordinator || false;
   
   const coordinatorMember = state.team.find(m => m.isCoordinator);
   const teamMembers = state.team.filter(m => !m.isCoordinator);
 
   const toggleRole = (roleType: 'designerIds' | 'artisanIds' | 'editorIds', memberId: string) => {
-      // isCoordinator es siempre true ahora, así que esto siempre pasa
+      if (!isCoordinator) return;
       const currentIds = state.task6[roleType];
       let newIds: string[];
       if (currentIds.includes(memberId)) {
@@ -84,10 +85,15 @@ export const Task6_FinalAssembly: React.FC = () => {
 
       {activeTab === 'roles' && (
         <div className="space-y-8">
-             <div className="bg-white p-6 rounded-xl border border-gray-200">
+             <div className="bg-white p-6 rounded-xl border border-gray-200 relative">
+                {!isCoordinator && (
+                    <div className="absolute top-4 right-4 flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                        <Lock size={14} /> Solo Coordinador
+                    </div>
+                )}
                 <h3 className="text-xl font-bold text-gray-800 mb-6">Asignación de Roles Finales</h3>
                 <p className="text-gray-600 mb-6">
-                    Asigna los miembros (pueden ser varios por rol).
+                    {isCoordinator ? 'Asigna los miembros (pueden ser varios por rol).' : 'Solo el Coordinador puede asignar estos roles.'}
                 </p>
 
                 {/* COORDINATOR ROLE CARD */}
@@ -113,12 +119,13 @@ export const Task6_FinalAssembly: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                              {teamMembers.map(m => (
-                                <label key={m.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-purple-100 cursor-pointer">
+                                <label key={m.id} className={`flex items-center gap-2 text-sm p-1 rounded hover:bg-purple-100 ${isCoordinator ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}>
                                     <input 
                                         type="checkbox"
                                         checked={state.task6.designerIds.includes(m.id)}
                                         onChange={() => toggleRole('designerIds', m.id)}
                                         className="rounded text-purple-600 focus:ring-purple-500"
+                                        disabled={!isCoordinator}
                                     />
                                     {m.name}
                                 </label>
@@ -134,12 +141,13 @@ export const Task6_FinalAssembly: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                              {teamMembers.map(m => (
-                                <label key={m.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-orange-100 cursor-pointer">
+                                <label key={m.id} className={`flex items-center gap-2 text-sm p-1 rounded hover:bg-orange-100 ${isCoordinator ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}>
                                     <input 
                                         type="checkbox"
                                         checked={state.task6.artisanIds.includes(m.id)}
                                         onChange={() => toggleRole('artisanIds', m.id)}
                                         className="rounded text-orange-600 focus:ring-orange-500"
+                                        disabled={!isCoordinator}
                                     />
                                     {m.name}
                                 </label>
@@ -155,12 +163,13 @@ export const Task6_FinalAssembly: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                              {teamMembers.map(m => (
-                                <label key={m.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-blue-100 cursor-pointer">
+                                <label key={m.id} className={`flex items-center gap-2 text-sm p-1 rounded hover:bg-blue-100 ${isCoordinator ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}>
                                     <input 
                                         type="checkbox"
                                         checked={state.task6.editorIds.includes(m.id)}
                                         onChange={() => toggleRole('editorIds', m.id)}
                                         className="rounded text-blue-600 focus:ring-blue-500"
+                                        disabled={!isCoordinator}
                                     />
                                     {m.name}
                                 </label>

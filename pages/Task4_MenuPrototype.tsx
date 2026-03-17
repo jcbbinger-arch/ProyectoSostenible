@@ -8,8 +8,19 @@ export const Task4_MenuPrototype: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'report'>('instructions');
   const [activeReportSection, setActiveReportSection] = useState<string | null>('resumen');
 
-  // PERMISOS: Habilitados para todos
-  const isCoordinator = true;
+  // PERMISOS
+  const currentUserMember = state.team.find(m => m.id === state.currentUser);
+  const isCoordinator = currentUserMember?.isCoordinator || false;
+  const isDesigner = state.task6.designerIds.includes(state.currentUser || '');
+  const isArtisan = state.task6.artisanIds.includes(state.currentUser || '');
+  const isEditor = state.task6.editorIds.includes(state.currentUser || '');
+
+  // Si no hay roles asignados aún, permitimos al coordinador o a todos (dependiendo de la política)
+  // Para simplificar y seguir la petición: "solo puedan modificar el suyo"
+  // En Tarea 4, dividiremos por roles de la Tarea 6 si están presentes, si no, el coordinador.
+  const canEditDigital = isDesigner || isCoordinator || (state.task6.designerIds.length === 0);
+  const canEditPhysical = isArtisan || isCoordinator || (state.task6.artisanIds.length === 0);
+  const canEditReport = isEditor || isCoordinator || (state.task6.editorIds.length === 0);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -142,30 +153,41 @@ export const Task4_MenuPrototype: React.FC = () => {
       {activeTab === 'development' && (
         <div className="space-y-8 no-print">
             
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center gap-3">
-                <Eye className="text-blue-600" />
-                <p className="text-sm text-blue-800">
-                    <strong>Modo Colaborativo:</strong> Todos los miembros tienen acceso para ver y editar los prototipos del equipo.
+            <div className={`bg-${(canEditDigital && canEditPhysical) ? 'blue' : 'orange'}-50 border border-${(canEditDigital && canEditPhysical) ? 'blue' : 'orange'}-200 p-4 rounded-lg flex items-center gap-3`}>
+                <Eye className={`text-${(canEditDigital && canEditPhysical) ? 'blue' : 'orange'}-600`} />
+                <p className={`text-sm text-${(canEditDigital && canEditPhysical) ? 'blue' : 'orange'}-800`}>
+                    <strong>Modo Colaborativo:</strong> {(canEditDigital && canEditPhysical) ? 'Tienes acceso para editar los prototipos del equipo.' : 'Solo los miembros asignados (Diseñadores/Artesanos) o el Coordinador pueden editar.'}
                 </p>
             </div>
 
             {/* General Style */}
-            <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative">
+                {!isCoordinator && (
+                    <div className="absolute top-4 right-4 flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                        <Palette size={14} /> Solo Coordinador
+                    </div>
+                )}
                 <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <Palette size={20} className="text-gray-500" /> Identidad Visual General
                 </h3>
                 <label className="block text-sm text-gray-600 mb-2">Explica brevemente la idea visual general (colores, tipografías, materiales que evocan la zona...)</label>
                 <textarea 
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 min-h-[100px]"
-                    placeholder="Ej: Usaremos tonos ocres y verdes para recordar a la huerta..."
+                    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 min-h-[100px] ${!isCoordinator ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    placeholder={isCoordinator ? "Ej: Usaremos tonos ocres y verdes para recordar a la huerta..." : "Solo el Coordinador puede editar esta sección."}
                     value={state.menuPrototype.generalStyle}
-                    onChange={(e) => updateMenuPrototype({ generalStyle: e.target.value })}
+                    onChange={(e) => isCoordinator && updateMenuPrototype({ generalStyle: e.target.value })}
+                    disabled={!isCoordinator}
                 />
             </section>
 
             <div className="grid md:grid-cols-2 gap-8">
                 {/* Digital */}
-                <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative">
+                    {!canEditDigital && (
+                        <div className="absolute top-4 right-4 flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                            <Layout size={14} /> Solo Diseñadores
+                        </div>
+                    )}
                     <h3 className="text-xl font-bold text-purple-900 mb-4 flex items-center gap-2">
                         <Layout size={20} /> Misión 4.A (Digital)
                     </h3>
@@ -176,10 +198,11 @@ export const Task4_MenuPrototype: React.FC = () => {
                     <div className="flex gap-2">
                         <input 
                             type="url"
-                            className="flex-1 p-2 border border-gray-300 rounded"
-                            placeholder="https://www.canva.com/..."
+                            className={`flex-1 p-2 border border-gray-300 rounded ${!canEditDigital ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            placeholder={canEditDigital ? "https://www.canva.com/..." : "Solo Diseñadores pueden editar."}
                             value={state.menuPrototype.digitalLink}
-                            onChange={(e) => updateMenuPrototype({ digitalLink: e.target.value })}
+                            onChange={(e) => canEditDigital && updateMenuPrototype({ digitalLink: e.target.value })}
+                            disabled={!canEditDigital}
                         />
                         {state.menuPrototype.digitalLink && (
                             <a 
@@ -195,7 +218,12 @@ export const Task4_MenuPrototype: React.FC = () => {
                 </section>
 
                 {/* Physical */}
-                <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative">
+                    {!canEditPhysical && (
+                        <div className="absolute top-4 right-4 flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">
+                            <PenTool size={14} /> Solo Artesanos
+                        </div>
+                    )}
                     <h3 className="text-xl font-bold text-orange-900 mb-4 flex items-center gap-2">
                         <PenTool size={20} /> Misión 4.B (Físico)
                     </h3>
@@ -210,18 +238,20 @@ export const Task4_MenuPrototype: React.FC = () => {
                                         alt="Boceto Carta" 
                                         className="w-full h-48 object-contain rounded" 
                                     />
-                                    <button 
-                                        onClick={() => updateMenuPrototype({ physicalPhoto: null })}
-                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs"
-                                    >
-                                        Eliminar
-                                    </button>
+                                    {canEditPhysical && (
+                                        <button 
+                                            onClick={() => updateMenuPrototype({ physicalPhoto: null })}
+                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
-                                <label className="cursor-pointer flex flex-col items-center text-gray-500 hover:text-orange-600">
+                                <label className={`flex flex-col items-center text-gray-500 ${canEditPhysical ? 'cursor-pointer hover:text-orange-600' : 'cursor-not-allowed'}`}>
                                     <Upload size={32} className="mb-2" />
-                                    <span className="text-sm font-bold">Subir Foto</span>
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+                                    <span className="text-sm font-bold">{canEditPhysical ? 'Subir Foto' : 'Solo Artesanos'}</span>
+                                    {canEditPhysical && <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />}
                                 </label>
                             )}
                         </div>
@@ -230,11 +260,12 @@ export const Task4_MenuPrototype: React.FC = () => {
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">Explicación del Formato Físico</label>
                         <textarea 
-                             className="w-full p-2 border border-gray-300 rounded"
+                             className={`w-full p-2 border border-gray-300 rounded ${!canEditPhysical ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                              rows={3}
-                             placeholder="Ej: Será un díptico en papel reciclado con textura..."
+                             placeholder={canEditPhysical ? "Ej: Será un díptico en papel reciclado con textura..." : "Solo Artesanos pueden editar."}
                              value={state.menuPrototype.physicalDescription}
-                             onChange={(e) => updateMenuPrototype({ physicalDescription: e.target.value })}
+                             onChange={(e) => canEditPhysical && updateMenuPrototype({ physicalDescription: e.target.value })}
+                             disabled={!canEditPhysical}
                         />
                     </div>
                 </section>
@@ -274,7 +305,12 @@ export const Task4_MenuPrototype: React.FC = () => {
 
             {/* Content Area for Report Editing */}
             <div className="md:col-span-8 no-print">
-                <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm min-h-[600px]">
+                <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm min-h-[600px] relative">
+                    {!canEditReport && (
+                        <div className="absolute top-4 right-4 flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200 z-10">
+                            <FileText size={14} /> Solo Editores
+                        </div>
+                    )}
                     {reportSections.map(section => {
                         if (activeReportSection !== section.id) return null;
 
@@ -286,10 +322,11 @@ export const Task4_MenuPrototype: React.FC = () => {
                                     <div className="space-y-4">
                                         <label className="block text-sm font-bold text-gray-700">Contenido de la sección</label>
                                         <textarea 
-                                            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[400px]"
-                                            placeholder={`Redacta aquí el contenido para ${section.label}...`}
+                                            className={`w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[400px] ${!canEditReport ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                                            placeholder={canEditReport ? `Redacta aquí el contenido para ${section.label}...` : "Solo Editores pueden redactar la memoria."}
                                             value={(state.interimReport as any)[section.field]}
-                                            onChange={(e) => updateInterimReport({ [section.field!]: e.target.value })}
+                                            onChange={(e) => canEditReport && updateInterimReport({ [section.field!]: e.target.value })}
+                                            disabled={!canEditReport}
                                         />
                                     </div>
                                 ) : (
@@ -298,10 +335,11 @@ export const Task4_MenuPrototype: React.FC = () => {
                                             <div key={sub.id}>
                                                 <label className="block text-sm font-bold text-gray-700 mb-2">{sub.label}</label>
                                                 <textarea 
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[120px]"
-                                                    placeholder={`Escribe aquí...`}
+                                                    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[120px] ${!canEditReport ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                                                    placeholder={canEditReport ? `Escribe aquí...` : "Solo Editores pueden redactar la memoria."}
                                                     value={sub.parent ? getNestedValue(state.interimReport, `${sub.parent}.${sub.id}`) : (state.interimReport as any)[sub.id]}
                                                     onChange={(e) => {
+                                                        if (!canEditReport) return;
                                                         if (sub.parent) {
                                                             const updatedReport = updateNestedValue({ ...state.interimReport }, `${sub.parent}.${sub.id}`, e.target.value);
                                                             updateInterimReport(updatedReport);
@@ -309,6 +347,7 @@ export const Task4_MenuPrototype: React.FC = () => {
                                                             updateInterimReport({ [sub.id]: e.target.value });
                                                         }
                                                     }}
+                                                    disabled={!canEditReport}
                                                 />
                                             </div>
                                         ))}
@@ -316,8 +355,8 @@ export const Task4_MenuPrototype: React.FC = () => {
                                 )}
 
                                 <div className="mt-8 flex justify-end">
-                                    <button className="flex items-center gap-2 text-green-600 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200">
-                                        <Save size={18} /> Autoguardado activo
+                                    <button className={`flex items-center gap-2 font-bold px-4 py-2 rounded-lg border ${canEditReport ? 'text-green-600 bg-green-50 border-green-200' : 'text-gray-400 bg-gray-50 border-gray-200'}`}>
+                                        <Save size={18} /> {canEditReport ? 'Autoguardado activo' : 'Modo lectura'}
                                     </button>
                                 </div>
                             </div>
