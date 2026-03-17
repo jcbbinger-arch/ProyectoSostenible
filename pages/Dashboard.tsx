@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { state, setCurrentUser } = useProject();
@@ -95,10 +95,50 @@ export const Dashboard: React.FC = () => {
         <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tight">
           Panel de Gestión <span className="text-emerald-600">Murcia Sostenible</span>
         </h1>
-        <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
+        <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed mb-8">
             Bienvenido, <span className="text-slate-900 font-bold">{profile?.displayName}</span>. 
             Gestiona tu proyecto de restauración sostenible de forma colaborativa.
         </p>
+
+        {/* Grading System Explanation */}
+        <div className="max-w-4xl mx-auto bg-white border-2 border-slate-100 rounded-[2rem] p-8 text-left shadow-sm mb-12">
+            <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                <GraduationCap className="text-emerald-600" size={32} />
+                Sistema de Calificación (2 Fases)
+            </h2>
+            <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">1</div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">Resultado de Equipo (Máx. 6 pts)</h4>
+                            <p className="text-sm text-slate-500">Evaluación y calificación basada en las rúbricas y realizada por el profesor/a.</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">2</div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">Contribución Individual (Máx. 4 pts)</h4>
+                            <ul className="text-sm text-slate-500 space-y-2 mt-2">
+                                <li className="flex items-start gap-2">
+                                    <span className="text-emerald-500 font-bold">•</span>
+                                    <span><strong>Hasta 3 puntos:</strong> Valoración de la exposición, defensa y contribución individual ante los profesores.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="text-emerald-500 font-bold">•</span>
+                                    <span><strong>1 punto adicional:</strong> "Coevaluación Diabólica". Valoración de los compañeros sobre tu participación real.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500 italic">
+                * La Coevaluación Diabólica puede ser un punto positivo o negativo. El profesor revisa las justificaciones y decide su efectividad para ajustar la nota individual.
+            </div>
+        </div>
       </header>
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">

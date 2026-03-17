@@ -18,6 +18,7 @@ import { TeamSync } from './pages/TeamSync';
 import { FinalMemory } from './pages/FinalMemory';
 import { AcademicGuide } from './pages/AcademicGuide';
 import { CoEvaluation } from './pages/CoEvaluation';
+import { TeacherEvaluation } from './pages/TeacherEvaluation';
 import { Login } from './pages/Login';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { WaitingRoom } from './components/WaitingRoom';
@@ -58,7 +59,7 @@ const AppContent = () => {
     <HashRouter>
       {!user ? (
         <Login />
-      ) : profile?.role === 'admin' ? (
+      ) : profile?.role === 'admin' && !profile?.projectId ? (
         <AdminDashboard />
       ) : profile?.status === 'pending' ? (
         <WaitingRoom />
@@ -88,6 +89,7 @@ const AppContent = () => {
             <Route path="/financials" element={<Task5_Financials />} />
             <Route path="/task-6" element={<Task6_FinalAssembly />} />
             <Route path="/co-eval" element={<CoEvaluation />} />
+            <Route path="/teacher-eval" element={<TeacherEvaluation />} />
             <Route path="/memory" element={<FinalMemory />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

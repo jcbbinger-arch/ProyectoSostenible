@@ -71,6 +71,16 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const enterProject = async (projectId: string) => {
+    if (!profile?.uid) return;
+    try {
+      await updateDoc(doc(db, 'users', profile.uid), { projectId });
+      // App.tsx will pick up the change and show the project view
+    } catch (error) {
+      console.error("Error entering project:", error);
+    }
+  };
+
   const rejectUser = async (uid: string) => {
     // In a real app, we might delete the user or mark as rejected
     try {
@@ -251,7 +261,11 @@ export const AdminDashboard: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" title="Ver proyecto">
+                          <button 
+                            onClick={() => enterProject(project.id)}
+                            className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" 
+                            title="Ver proyecto"
+                          >
                             <ExternalLink className="w-5 h-5" />
                           </button>
                           <button className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Eliminar">
