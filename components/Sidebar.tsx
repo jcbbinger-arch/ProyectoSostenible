@@ -57,7 +57,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   const executionItems = [
-    { to: "/task-2", icon: <Microscope size={18} />, label: "3. Análisis" },
+    { to: "/task-2", icon: <Microscope size={18} />, label: "Tarea 2" },
     { to: "/menu", icon: <UtensilsCrossed size={18} />, label: "4. Carta" },
     { to: "/task-4", icon: <Palette size={18} />, label: "5. Prototipos" },
     { to: "/financials", icon: <DollarSign size={18} />, label: "6. Viabilidad" },

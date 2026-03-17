@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
-import { Palette, ExternalLink, Upload, PenTool, Layout, Eye } from 'lucide-react';
+import { Palette, ExternalLink, Upload, PenTool, Layout, Eye, FileText, Printer, Save, ChevronRight, ChevronDown } from 'lucide-react';
 
 export const Task4_MenuPrototype: React.FC = () => {
-  const { state, updateMenuPrototype } = useProject();
-  const [activeTab, setActiveTab] = useState<'instructions' | 'development'>('instructions');
+  const { state, updateMenuPrototype, updateInterimReport } = useProject();
+  const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'report'>('instructions');
+  const [activeReportSection, setActiveReportSection] = useState<string | null>('resumen');
 
   // PERMISOS: Habilitados para todos
   const isCoordinator = true;
@@ -21,12 +22,56 @@ export const Task4_MenuPrototype: React.FC = () => {
     }
   };
 
+  const reportSections = [
+    { id: 'resumen', label: '2. Resumen', field: 'summary' },
+    { id: 'introduccion', label: '3. Introducción', subfields: [
+        { id: 'context', label: '3.1. Contexto y justificación', parent: 'introduction' },
+        { id: 'objectives', label: '3.2. Objetivos', parent: 'introduction' },
+        { id: 'scope', label: '3.3. Alcance y limitaciones', parent: 'introduction' },
+    ]},
+    { id: 'analisis', label: '4. Análisis y Contextualización', subfields: [
+        { id: 'identification', label: '4.1.1. Identificación de empresas representativas', parent: 'analysis.companies' },
+        { id: 'economicAnalysis', label: '4.1.2. Análisis del sector económico', parent: 'analysis.companies' },
+        { id: 'selectionJustification', label: '4.1.3. Justificación de la empresa seleccionada', parent: 'analysis.companies' },
+        { id: 'identification', label: '4.2.1. Identificación de productos y servicios', parent: 'analysis.products' },
+        { id: 'targetAudience', label: '4.2.2. Público objetivo y mercado potencial', parent: 'analysis.products' },
+        { id: 'differentiation', label: '4.2.3. Diferenciación con la competencia', parent: 'analysis.products' },
+        { id: 'identification', label: '4.3.1. Identificación de los ODS relacionados', parent: 'analysis.ods' },
+        { id: 'justification', label: '4.3.2. Justificación de la relación ODS', parent: 'analysis.ods' },
+        { id: 'identification', label: '4.4.1. Identificación de los riesgos laborales', parent: 'analysis.laborRisks' },
+        { id: 'measures', label: '4.4.2. Medidas de prevención y protección', parent: 'analysis.laborRisks' },
+        { id: 'synthesis', label: '4.5.1. Síntesis de los hallazgos más relevantes', parent: 'analysis.conclusions' },
+        { id: 'proposals', label: '4.5.2. Propuestas de mejora o líneas de actuación', parent: 'analysis.conclusions' },
+    ]},
+    { id: 'desarrollo', label: '5. Desarrollo del Proyecto', subfields: [
+        { id: 'planning', label: '5.1. Planificación y organización del trabajo', parent: 'development' },
+        { id: 'methodology', label: '5.2. Metodología y herramientas utilizadas', parent: 'development' },
+        { id: 'resources', label: '5.3. Recursos necesarios', parent: 'development' },
+    ]},
+    { id: 'resultados', label: '6. Resultados y Discusión', field: 'results' },
+    { id: 'conclusiones', label: '7. Conclusiones y Recomendaciones', field: 'conclusions' },
+    { id: 'recomendaciones', label: '7.2. Recomendaciones (Opcional)', field: 'recommendations' },
+    { id: 'bibliografia', label: '8. Bibliografía y Fuentes', field: 'bibliography' },
+  ];
+
+  const getNestedValue = (obj: any, path: string) => {
+    return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+  };
+
+  const updateNestedValue = (obj: any, path: string, value: any) => {
+    const parts = path.split('.');
+    const last = parts.pop()!;
+    const target = parts.reduce((acc, part) => acc[part], obj);
+    target[last] = value;
+    return { ...obj };
+  };
+
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div className="p-8 max-w-6xl mx-auto">
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
         <div>
-            <h2 className="text-3xl font-bold text-gray-900">Tarea 4: Prototipo de Carta</h2>
-            <p className="text-gray-600 mt-2">Diseño Visual (Noviembre - Diciembre)</p>
+            <h2 className="text-3xl font-bold text-gray-900">Tarea 4: Prototipo y Memoria</h2>
+            <p className="text-gray-600 mt-2">Diseño Visual y Memoria Intermedia</p>
         </div>
         <div className="flex gap-2">
             <button 
@@ -39,46 +84,55 @@ export const Task4_MenuPrototype: React.FC = () => {
                 onClick={() => setActiveTab('development')}
                 className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'development' ? 'bg-green-600 text-white' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
             >
-                Desarrollo
+                Prototipo
+            </button>
+            <button 
+                onClick={() => setActiveTab('report')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'report' ? 'bg-slate-800 text-white' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
+            >
+                Memoria Intermedia
             </button>
         </div>
       </div>
 
       {activeTab === 'instructions' && (
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 no-print">
              <h3 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-4">Guía de la Tarea 4</h3>
              <div className="prose max-w-none text-gray-700 space-y-6">
                 <div className="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
                     <h4 className="font-bold text-green-900 mt-0">Objetivo</h4>
-                    <p>Crear la carta, documentarla y diseñar una primera versión (un prototipo) de sus soportes visuales.</p>
+                    <p>Crear la carta, documentarla y diseñar una primera versión (un prototipo) de sus soportes visuales. Además, se debe completar la <strong>Memoria Intermedia</strong> del proyecto.</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-3 gap-6">
                     <div className="border border-gray-200 rounded-lg p-6">
                         <div className="flex items-center gap-2 mb-4">
                             <Layout className="text-purple-600" />
-                            <h4 className="font-bold text-lg m-0">Misión 4.A: El Prototipador Digital</h4>
+                            <h4 className="font-bold text-lg m-0">Misión 4.A: Digital</h4>
                         </div>
-                        <p className="text-sm"><strong>Tarea:</strong> Crear una versión 0.1 (borrador) de la carta virtual en Canva. No tiene que ser perfecta, pero debe mostrar la estructura y el estilo visual.</p>
-                        <p className="text-sm mt-2 font-bold">Entregable: Enlace público al diseño de Canva.</p>
+                        <p className="text-sm">Crear un borrador de la carta virtual en Canva.</p>
                     </div>
 
                     <div className="border border-gray-200 rounded-lg p-6">
                          <div className="flex items-center gap-2 mb-4">
                             <PenTool className="text-orange-600" />
-                            <h4 className="font-bold text-lg m-0">Misión 4.B: El Prototipador Físico</h4>
+                            <h4 className="font-bold text-lg m-0">Misión 4.B: Físico</h4>
                         </div>
-                        <p className="text-sm"><strong>Tarea:</strong> Crear un boceto o una maqueta sencilla de la carta física (dibujo, collage, cartulina...).</p>
-                         <p className="text-sm mt-2 font-bold">Entregable: Foto del boceto y breve explicación.</p>
+                        <p className="text-sm">Crear un boceto o maqueta de la carta física.</p>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-6">
+                         <div className="flex items-center gap-2 mb-4">
+                            <FileText className="text-slate-600" />
+                            <h4 className="font-bold text-lg m-0">Memoria Intermedia</h4>
+                        </div>
+                        <p className="text-sm">Redactar los apartados de la memoria para la entrega parcial.</p>
                     </div>
                 </div>
 
-                 <div className="mt-4 bg-gray-50 p-4 rounded text-sm text-gray-600">
-                    <strong>Nota:</strong> Estos entregables se añadirán automáticamente al Nuevo Capítulo "Prototipo de Diseño de Carta" en la Memoria Parcial.
-                </div>
                  <div className="flex justify-center mt-6">
                     <button onClick={() => setActiveTab('development')} className="bg-green-600 text-white px-6 py-3 rounded-full font-bold shadow hover:bg-green-700">
-                        Comenzar Prototipado
+                        Comenzar Desarrollo
                     </button>
                  </div>
              </div>
@@ -86,7 +140,7 @@ export const Task4_MenuPrototype: React.FC = () => {
       )}
 
       {activeTab === 'development' && (
-        <div className="space-y-8">
+        <div className="space-y-8 no-print">
             
             <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex items-center gap-3">
                 <Eye className="text-blue-600" />
@@ -184,6 +238,379 @@ export const Task4_MenuPrototype: React.FC = () => {
                         />
                     </div>
                 </section>
+            </div>
+        </div>
+      )}
+
+      {activeTab === 'report' && (
+        <div className="grid md:grid-cols-12 gap-8">
+            {/* Sidebar Navigation for Report */}
+            <div className="md:col-span-4 space-y-2 no-print">
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-4">
+                    <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <FileText size={18} className="text-blue-600" /> Secciones de la Memoria
+                    </h4>
+                    <div className="space-y-1">
+                        {reportSections.map(section => (
+                            <button
+                                key={section.id}
+                                onClick={() => setActiveReportSection(section.id)}
+                                className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition flex items-center justify-between ${activeReportSection === section.id ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                <span>{section.label}</span>
+                                <ChevronRight size={14} className={activeReportSection === section.id ? 'opacity-100' : 'opacity-0'} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <button 
+                    onClick={() => window.print()}
+                    className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition shadow-lg"
+                >
+                    <Printer size={18} /> Imprimir Memoria Completa
+                </button>
+            </div>
+
+            {/* Content Area for Report Editing */}
+            <div className="md:col-span-8 no-print">
+                <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm min-h-[600px]">
+                    {reportSections.map(section => {
+                        if (activeReportSection !== section.id) return null;
+
+                        return (
+                            <div key={section.id} className="animate-fade-in">
+                                <h3 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">{section.label}</h3>
+                                
+                                {section.field ? (
+                                    <div className="space-y-4">
+                                        <label className="block text-sm font-bold text-gray-700">Contenido de la sección</label>
+                                        <textarea 
+                                            className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[400px]"
+                                            placeholder={`Redacta aquí el contenido para ${section.label}...`}
+                                            value={(state.interimReport as any)[section.field]}
+                                            onChange={(e) => updateInterimReport({ [section.field!]: e.target.value })}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {section.subfields?.map(sub => (
+                                            <div key={sub.id}>
+                                                <label className="block text-sm font-bold text-gray-700 mb-2">{sub.label}</label>
+                                                <textarea 
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[120px]"
+                                                    placeholder={`Escribe aquí...`}
+                                                    value={sub.parent ? getNestedValue(state.interimReport, `${sub.parent}.${sub.id}`) : (state.interimReport as any)[sub.id]}
+                                                    onChange={(e) => {
+                                                        if (sub.parent) {
+                                                            const updatedReport = updateNestedValue({ ...state.interimReport }, `${sub.parent}.${sub.id}`, e.target.value);
+                                                            updateInterimReport(updatedReport);
+                                                        } else {
+                                                            updateInterimReport({ [sub.id]: e.target.value });
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="mt-8 flex justify-end">
+                                    <button className="flex items-center gap-2 text-green-600 font-bold bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                                        <Save size={18} /> Autoguardado activo
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* PRINTABLE VERSION (HIDDEN ON SCREEN) */}
+            <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-0 m-0 overflow-visible">
+                <div className="p-12 max-w-4xl mx-auto text-gray-900 font-serif leading-relaxed">
+                    
+                    {/* 1. PORTADA */}
+                    <div className="h-screen flex flex-col justify-between border-8 border-double border-slate-900 p-12 mb-12">
+                        <div className="text-center">
+                            <div className="flex justify-center mb-8">
+                                {state.schoolLogo ? (
+                                    <img src={state.schoolLogo} alt="Logo Centro" className="h-32 w-auto" />
+                                ) : (
+                                    <div className="h-32 w-32 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">Logo Centro</div>
+                                )}
+                            </div>
+                            <h2 className="text-2xl font-bold uppercase tracking-widest text-slate-700">{state.schoolName}</h2>
+                            <p className="text-lg text-slate-500 mt-2">Curso Académico {state.academicYear}</p>
+                        </div>
+
+                        <div className="text-center py-20">
+                            <h3 className="text-sm font-bold uppercase tracking-[0.3em] text-slate-400 mb-4">Memoria Intermedia de Proyecto</h3>
+                            <h1 className="text-6xl font-black uppercase tracking-tighter text-slate-900 mb-6">{state.concept.name || 'PROYECTO SIN NOMBRE'}</h1>
+                            <div className="w-24 h-2 bg-slate-900 mx-auto"></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-12 text-sm">
+                            <div className="space-y-6">
+                                <div>
+                                    <p className="font-bold uppercase text-slate-400 text-[10px] tracking-widest mb-1">1.2. Ciclo Formativo y Módulos</p>
+                                    <p className="font-bold text-slate-800">Grado Superior en Dirección de Cocina / Servicios de Restauración</p>
+                                    <p className="text-slate-600 text-xs mt-1">Módulos: Gestión de la Producción, Diseño de Cartas, Sostenibilidad.</p>
+                                </div>
+                                <div>
+                                    <p className="font-bold uppercase text-slate-400 text-[10px] tracking-widest mb-1">1.3. Integrantes del Equipo</p>
+                                    <ul className="font-bold text-slate-800">
+                                        {state.team.map(m => <li key={m.id}>{m.name} {m.isCoordinator && '(Coordinador/a)'}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div className="text-right space-y-6">
+                                <div>
+                                    <p className="font-bold uppercase text-slate-400 text-[10px] tracking-widest mb-1">1.4. Profesor Responsable</p>
+                                    <p className="font-bold text-slate-800">Dpto. Hostelería y Turismo</p>
+                                </div>
+                                <div>
+                                    <p className="font-bold uppercase text-slate-400 text-[10px] tracking-widest mb-1">1.5. Fecha de Presentación</p>
+                                    <p className="font-bold text-slate-800">{new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="page-break" />
+
+                    {/* ÍNDICE */}
+                    <div className="py-12 min-h-screen">
+                        <h2 className="text-3xl font-bold mb-12 border-b-2 border-slate-900 pb-4">Índice del Trabajo</h2>
+                        <div className="space-y-4 text-lg">
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1">
+                                <span className="font-bold">1. Portada</span>
+                                <span>1</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1">
+                                <span className="font-bold">2. Resumen</span>
+                                <span>2</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1">
+                                <span className="font-bold">3. Introducción</span>
+                                <span>3</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>3.1. Contexto y justificación del proyecto</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>3.2. Objetivos del proyecto</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>3.3. Alcance y limitaciones del trabajo</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1 pt-2">
+                                <span className="font-bold">4. Análisis y contextualización de empresas del sector</span>
+                                <span>6</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>4.1. Caracterización de empresas del sector</span>
+                                <span>6</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>4.2. Productos y servicios</span>
+                                <span>8</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>4.3. Relación con los ODS</span>
+                                <span>10</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>4.4. Prevención de riesgos laborales</span>
+                                <span>12</span>
+                            </div>
+                            <div className="pl-6 flex justify-between text-sm text-slate-600">
+                                <span>4.5. Conclusiones del análisis</span>
+                                <span>14</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1 pt-2">
+                                <span className="font-bold">5. Desarrollo del Proyecto</span>
+                                <span>16</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1 pt-2">
+                                <span className="font-bold">6. Resultados y discusión</span>
+                                <span>20</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1 pt-2">
+                                <span className="font-bold">7. Conclusiones y recomendaciones</span>
+                                <span>22</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1 pt-2">
+                                <span className="font-bold">8. Bibliografía y fuentes consultadas</span>
+                                <span>24</span>
+                            </div>
+                            <div className="flex justify-between border-b border-dotted border-slate-300 pb-1 pt-2">
+                                <span className="font-bold">9. Anexos</span>
+                                <span>25</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="page-break" />
+
+                    {/* 2. RESUMEN */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">2. Resumen</h2>
+                        <p className="text-justify">{state.interimReport.summary || 'Pendiente de redacción.'}</p>
+                    </div>
+
+                    {/* 3. INTRODUCCIÓN */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">3. Introducción</h2>
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">3.1. Contexto y justificación del proyecto</h3>
+                                <p className="text-justify">{state.interimReport.introduction.context || 'Pendiente de redacción.'}</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">3.2. Objetivos del proyecto</h3>
+                                <p className="text-justify">{state.interimReport.introduction.objectives || 'Pendiente de redacción.'}</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">3.3. Alcance y limitaciones del trabajo</h3>
+                                <p className="text-justify">{state.interimReport.introduction.scope || 'Pendiente de redacción.'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="page-break" />
+
+                    {/* 4. ANÁLISIS */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">4. Análisis y contextualización de empresas del sector</h2>
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">4.1. Caracterización de empresas del sector</h3>
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-slate-700">4.1.1. Identificación de las empresas representativas</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.companies.identification || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.1.2. Análisis del sector económico</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.companies.economicAnalysis || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.1.3. Justificación de la empresa seleccionada</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.companies.selectionJustification || 'Pendiente de redacción.'}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">4.2. Productos y servicios</h3>
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-slate-700">4.2.1. Identificación de los principales productos y servicios</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.products.identification || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.2.2. Público objetivo y mercado potencial</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.products.targetAudience || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.2.3. Diferenciación con la competencia</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.products.differentiation || 'Pendiente de redacción.'}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">4.3. Relación con los Objetivos de Desarrollo Sostenible (ODS)</h3>
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-slate-700">4.3.1. Identificación de los ODS relacionados</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.ods.identification || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.3.2. Justificación de la relación ODS</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.ods.justification || 'Pendiente de redacción.'}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">4.4. Prevención de riesgos laborales</h3>
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-slate-700">4.4.1. Identificación de los riesgos laborales asociados</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.laborRisks.identification || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.4.2. Medidas de prevención y protección propuestas</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.laborRisks.measures || 'Pendiente de redacción.'}</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">4.5. Conclusiones del análisis y contextualización</h3>
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-slate-700">4.5.1. Síntesis de los hallazgos más relevantes</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.conclusions.synthesis || 'Pendiente de redacción.'}</p>
+                                    <h4 className="font-bold text-slate-700">4.5.2. Propuestas de mejora o líneas de actuación</h4>
+                                    <p className="text-justify">{state.interimReport.analysis.conclusions.proposals || 'Pendiente de redacción.'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="page-break" />
+
+                    {/* 5. DESARROLLO */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">5. Desarrollo del Proyecto</h2>
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">5.1. Planificación y organización del trabajo</h3>
+                                <p className="text-justify">{state.interimReport.development.planning || 'Pendiente de redacción.'}</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">5.2. Metodología y herramientas utilizadas</h3>
+                                <p className="text-justify">{state.interimReport.development.methodology || 'Pendiente de redacción.'}</p>
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">5.3. Recursos necesarios (humanos, materiales, técnicos, etc.)</h3>
+                                <p className="text-justify">{state.interimReport.development.resources || 'Pendiente de redacción.'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 6. RESULTADOS */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">6. Resultados y discusión</h2>
+                        <p className="text-justify">{state.interimReport.results || 'Pendiente de redacción.'}</p>
+                    </div>
+
+                    {/* 7. CONCLUSIONES */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">7. Conclusiones y recomendaciones</h2>
+                        <div className="space-y-8">
+                            <div>
+                                <h3 className="text-xl font-bold mb-3">7.1. Conclusiones</h3>
+                                <p className="text-justify">{state.interimReport.conclusions || 'Pendiente de redacción.'}</p>
+                            </div>
+                            {state.interimReport.recommendations && (
+                                <div>
+                                    <h3 className="text-xl font-bold mb-3">7.2. Recomendaciones</h3>
+                                    <p className="text-justify">{state.interimReport.recommendations}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 8. BIBLIOGRAFÍA */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">8. Bibliografía</h2>
+                        <p className="text-justify whitespace-pre-wrap">{state.interimReport.bibliography || 'Pendiente de redacción.'}</p>
+                    </div>
+
+                    {/* ANEXOS */}
+                    <div className="py-12">
+                        <h2 className="text-2xl font-bold mb-6">Anexos</h2>
+                        <p className="text-slate-500 italic">Se adjuntan a continuación las fichas de autoevaluación, evidencias fotográficas y documentación técnica generada durante las fases 1, 2 y 3.</p>
+                        
+                        <div className="mt-8 grid grid-cols-2 gap-4">
+                            {state.menuPrototype.physicalPhoto && (
+                                <div className="border p-2 rounded">
+                                    <img src={state.menuPrototype.physicalPhoto} alt="Boceto" className="w-full h-auto" />
+                                    <p className="text-center text-xs mt-2 font-bold">Anexo: Prototipo Físico</p>
+                                </div>
+                            )}
+                            {state.concept.restaurantLogo && (
+                                <div className="border p-2 rounded">
+                                    <img src={state.concept.restaurantLogo} alt="Logo" className="w-full h-auto" />
+                                    <p className="text-center text-xs mt-2 font-bold">Anexo: Identidad Visual</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
       )}

@@ -20,16 +20,6 @@ export const ProjectSetup: React.FC = () => {
       updateTask6Roles({ [roleType]: newIds });
   };
 
-  const handleExportConfig = () => {
-    const dataStr = JSON.stringify(state, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `murcia_proyecto_MASTER_${state.teamName.replace(/\s+/g, '_')}_config.json`;
-    link.click();
-  };
-
   const coordinator = state.team.find(m => m.isCoordinator);
   const teamMembers = state.team.filter(m => !m.isCoordinator);
 
@@ -50,16 +40,16 @@ export const ProjectSetup: React.FC = () => {
             <Settings className="text-green-600"/> Configuración y Reparto Global
         </h2>
         <p className="text-gray-600 mt-2">
-          <strong>Solo Coordinador:</strong> Utiliza esta pantalla para distribuir las tareas colaborativas. 
-          Al terminar, descarga el "Archivo Maestro" y envíalo a tus compañeros.
+          <strong>Sincronización Automática:</strong> Los datos se guardan en tiempo real. 
+          Comparte el <strong>Código del Proyecto</strong> con tus compañeros para que se unan al equipo.
         </p>
       </div>
 
       <div className="space-y-12">
           {/* SECTION 1: TASK 2 */}
           <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">1. Reparto de Análisis (Tarea 2)</h3>
-              <p className="text-sm text-gray-500 mb-4">Asigna las 10 micro-tareas de investigación equitativamente.</p>
+              <h3 className="text-xl font-bold text-blue-900 mb-4">1. Reparto de Investigación (Tarea 2)</h3>
+              <p className="text-sm text-gray-500 mb-4">Asigna las 10 micro-tareas de investigación equitativamente entre los miembros del equipo.</p>
               
               <div className="grid md:grid-cols-2 gap-4">
                   {state.task2.tasks.map(task => (
@@ -165,18 +155,16 @@ export const ProjectSetup: React.FC = () => {
           </section>
 
           <div className="fixed bottom-0 left-64 right-0 p-4 bg-white border-t border-gray-200 shadow-lg flex justify-end items-center z-20">
-              <div className="flex gap-4">
+              <div className="flex gap-4 items-center">
+                  <div className="text-right mr-4">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Código para compartir</p>
+                      <p className="text-xl font-mono font-black text-green-600">{state.code}</p>
+                  </div>
                   <button 
                     onClick={() => {}}
-                    className="flex items-center gap-2 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold"
+                    className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold shadow-lg transition-all active:scale-95"
                   >
-                      <Save size={18} /> 1. Guardar
-                  </button>
-                  <button 
-                    onClick={handleExportConfig}
-                    className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold shadow-md animate-pulse"
-                  >
-                      <Download size={18} /> 2. Descargar Archivo Maestro
+                      <Save size={18} /> Guardar Configuración
                   </button>
               </div>
           </div>

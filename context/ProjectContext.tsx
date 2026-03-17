@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { ProjectState, Zone, Dish, TeamMember, MenuPrototype, Task6Roles, PeerReview } from '../types';
+import { ProjectState, Zone, Dish, TeamMember, MenuPrototype, Task6Roles, PeerReview, SeasonalProductContribution } from '../types';
 import { INITIAL_STATE } from '../constants';
 import { db, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs } from '../firebase';
 import { useAuth } from './AuthContext';
@@ -26,6 +26,8 @@ interface ProjectContextType {
   updateDish: (dish: Dish) => void;
   updateMenuPrototype: (data: Partial<MenuPrototype>) => void;
   updateTask6Roles: (roles: Partial<Task6Roles>) => void;
+  updateSeasonalProducts: (data: Partial<SeasonalProductContribution>) => void;
+  updateInterimReport: (data: any) => void;
   savePeerReview: (review: PeerReview) => void;
   resetProject: () => void;
 }
@@ -51,7 +53,23 @@ const sanitizeState = (loadedData: any): ProjectState => {
         menuPrototype: { ...INITIAL_STATE.menuPrototype, ...(loadedData.menuPrototype || {}) },
         dishes: Array.isArray(loadedData.dishes) ? loadedData.dishes : [],
         team: Array.isArray(loadedData.team) ? loadedData.team : [],
-        coEvaluations: Array.isArray(loadedData.coEvaluations) ? loadedData.coEvaluations : []
+        seasonalProducts: Array.isArray(loadedData.seasonalProducts) ? loadedData.seasonalProducts : [],
+        coEvaluations: Array.isArray(loadedData.coEvaluations) ? loadedData.coEvaluations : [],
+        interimReport: {
+            ...INITIAL_STATE.interimReport,
+            ...(loadedData.interimReport || {}),
+            introduction: { ...INITIAL_STATE.interimReport.introduction, ...(loadedData.interimReport?.introduction || {}) },
+            analysis: { 
+                ...INITIAL_STATE.interimReport.analysis, 
+                ...(loadedData.interimReport?.analysis || {}),
+                companies: { ...INITIAL_STATE.interimReport.analysis.companies, ...(loadedData.interimReport?.analysis?.companies || {}) },
+                products: { ...INITIAL_STATE.interimReport.analysis.products, ...(loadedData.interimReport?.analysis?.products || {}) },
+                ods: { ...INITIAL_STATE.interimReport.analysis.ods, ...(loadedData.interimReport?.analysis?.ods || {}) },
+                laborRisks: { ...INITIAL_STATE.interimReport.analysis.laborRisks, ...(loadedData.interimReport?.analysis?.laborRisks || {}) },
+                conclusions: { ...INITIAL_STATE.interimReport.analysis.conclusions, ...(loadedData.interimReport?.analysis?.conclusions || {}) }
+            },
+            development: { ...INITIAL_STATE.interimReport.development, ...(loadedData.interimReport?.development || {}) }
+        }
     };
 };
 
@@ -160,6 +178,42 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateDish = (dish: Dish) => setState(prev => ({ ...prev, dishes: prev.dishes.map(d => d.id === dish.id ? dish : d) }));
   const updateMenuPrototype = (data: Partial<MenuPrototype>) => setState(prev => ({ ...prev, menuPrototype: { ...prev.menuPrototype, ...data } }));
   const updateTask6Roles = (roles: Partial<Task6Roles>) => setState(prev => ({ ...prev, task6: { ...prev.task6, ...roles } }));
+  
+  const updateInterimReport = (data: any) => setState(prev => ({
+    ...prev,
+    interimReport: {
+      ...prev.interimReport,
+      ...data
+    }
+  }));
+
+  const updateSeasonalProducts = (data: Partial<SeasonalProductContribution>) => {
+      if (!state.currentUser) return;
+      setState(prev => {
+          const existing = prev.seasonalProducts.find(p => p.memberId === state.currentUser);
+          if (existing) {
+              return {
+                  ...prev,
+                  seasonalProducts: prev.seasonalProducts.map(p => 
+                      p.memberId === state.currentUser ? { ...p, ...data } : p
+                  )
+              };
+          } else {
+              return {
+                  ...prev,
+                  seasonalProducts: [...prev.seasonalProducts, {
+                      memberId: state.currentUser!,
+                      productList: '',
+                      sustainability: '',
+                      impactAnalysis: '',
+                      sources: [],
+                      ...data
+                  }]
+              };
+          }
+      });
+  };
+
   const savePeerReview = (review: PeerReview) => setState(prev => ({ ...prev, coEvaluations: [...prev.coEvaluations.filter(r => !(r.evaluatorId === review.evaluatorId && r.targetId === review.targetId)), review] }));
   
   const resetProject = () => {
@@ -171,7 +225,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       state, loading, setCurrentUser, createProject, joinProject, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
-      savePeerReview, resetProject 
+      updateSeasonalProducts, updateInterimReport, savePeerReview, resetProject 
     }}>
       {children}
     </ProjectContext.Provider>

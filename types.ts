@@ -102,6 +102,56 @@ export interface PeerReview {
   }
 }
 
+export interface SeasonalProductContribution {
+  memberId: string;
+  productList: string;
+  sustainability: string;
+  impactAnalysis: string;
+  sources: string[];
+}
+
+export interface InterimReport {
+  summary: string;
+  introduction: {
+    context: string;
+    objectives: string;
+    scope: string;
+  };
+  analysis: {
+    companies: {
+      identification: string;
+      economicAnalysis: string;
+      selectionJustification: string;
+    };
+    products: {
+      identification: string;
+      targetAudience: string;
+      differentiation: string;
+    };
+    ods: {
+      identification: string;
+      justification: string;
+    };
+    laborRisks: {
+      identification: string;
+      measures: string;
+    };
+    conclusions: {
+      synthesis: string;
+      proposals: string;
+    };
+  };
+  development: {
+    planning: string;
+    methodology: string;
+    resources: string;
+  };
+  results: string;
+  conclusions: string;
+  recommendations: string;
+  bibliography: string;
+}
+
 export interface ProjectState {
   // Firestore Metadata
   id?: string;
@@ -132,15 +182,20 @@ export interface ProjectState {
     slogan: string;
     targetAudience: string;
     values: string[];
+    restaurantLogo: string | null;
   };
   missions: IndividualMission;
   dishes: Dish[];
   menuPrototype: MenuPrototype;
   task6: Task6Roles;
   team: TeamMember[];
+  seasonalProducts: SeasonalProductContribution[];
   
   // New: Store all reviews
   coEvaluations: PeerReview[];
+
+  // Interim Report
+  interimReport: InterimReport;
 }
 
 export interface ChatMessage {

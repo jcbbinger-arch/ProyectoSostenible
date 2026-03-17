@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
-import { Lightbulb, Printer, ChevronDown, ChevronUp, Lock, AlertTriangle, Save, CheckCircle } from 'lucide-react';
+import { Lightbulb, Printer, ChevronDown, ChevronUp, Lock, AlertTriangle, Save, CheckCircle, Image as ImageIcon, Trash } from 'lucide-react';
 
 export const Task2_Analysis: React.FC = () => {
   const { state, updateTaskContent, updateConcept } = useProject();
@@ -59,13 +59,13 @@ export const Task2_Analysis: React.FC = () => {
             <div className="prose max-w-none text-gray-700 space-y-4">
                  <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
                     <h4 className="font-bold text-blue-900">Objetivo</h4>
-                    <p>Convertiros en expertos de la zona elegida y definir el concepto del restaurante. Trabajo grupal con reparto individual.</p>
+                    <p>Convertiros en expertos de la zona elegida y definir el concepto del restaurante. Esta tarea consta de una parte grupal (Concepto) y una parte individual (Investigación asignada).</p>
                 </div>
                 
-                <h4 className="font-bold text-lg mt-6">Pasos:</h4>
+                <h4 className="font-bold text-lg mt-6">Estructura de la Tarea:</h4>
                 <ul className="list-disc pl-5">
-                    <li><strong>Paso 1: Ejecución.</strong> Cada miembro completa sus "mini-informes" asignados (repartidos en la Tarea 1).</li>
-                    <li><strong>Paso 2: Conceptualización.</strong> Definid nombre, concepto y valores.</li>
+                    <li><strong>Parte 1 (Grupal): Conceptualización.</strong> Definid nombre, concepto y valores del restaurante.</li>
+                    <li><strong>Parte 2 (Individual): Investigación.</strong> Cada miembro completa sus "mini-informes" asignados en el reparto global. El documento final de cada alumno incluirá la parte grupal y sus informes individuales.</li>
                 </ul>
             </div>
         </div>
@@ -155,12 +155,40 @@ export const Task2_Analysis: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Concepto Principal</label>
-                    <input 
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ej: Barra gastronómica de salazones..."
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Define el tipo de cocina y servicio en una frase.</p>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Logo del Restaurante (Opcional)</label>
+                    <div className="flex items-center gap-4">
+                        {state.concept.restaurantLogo ? (
+                            <div className="relative group">
+                                <img src={state.concept.restaurantLogo} alt="Logo" className="h-16 w-16 object-contain border rounded bg-gray-50" />
+                                <button 
+                                    onClick={() => updateConcept('restaurantLogo', null)}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash size={12} />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col items-center justify-center w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                <ImageIcon className="text-gray-400" size={24} />
+                                <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                updateConcept('restaurantLogo', reader.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                            </label>
+                        )}
+                        <span className="text-xs text-gray-400">Sube el logo de tu marca si ya lo tienes diseñado.</span>
+                    </div>
                 </div>
             </div>
 
@@ -248,45 +276,30 @@ export const Task2_Analysis: React.FC = () => {
                 </div>
 
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900 mb-1">Entregable Tarea 2</h1>
+                    <h1 className="text-3xl font-bold uppercase tracking-wide text-gray-900 mb-1">Tarea 2</h1>
                     <h2 className="text-xl text-gray-600">Análisis del Entorno y Conceptualización</h2>
-                    <p className="mt-2 text-sm text-gray-500">Equipo: {state.teamName}</p>
+                    <p className="mt-2 text-sm text-gray-500">Equipo: {state.teamName} | Alumno: {state.team.find(m => m.id === state.currentUser)?.name || 'Sin identificar'}</p>
                 </div>
 
-                {/* PART A */}
+                {/* PART 1: GROUP CONCEPT (NOW FIRST) */}
                 <div className="mb-12">
-                    <h3 className="text-2xl font-bold text-blue-900 mb-6 border-b pb-2">Parte A: Anexos de Investigación</h3>
-                    <div className="space-y-6">
-                        {state.task2.tasks.map(task => {
-                            const assignee = state.team.find(m => m.id === task.assignedToId);
-                            return (
-                                <div key={task.id} className="break-inside-avoid mb-6 bg-gray-50 p-4 rounded border border-gray-200">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h4 className="font-bold text-gray-800">{task.title}</h4>
-                                        <span className="text-xs bg-white px-2 py-1 rounded border">
-                                            Autor: {assignee?.name || 'N/A'}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                        {task.content || <span className="text-gray-400 italic">Contenido no completado.</span>}
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="page-break" />
-
-                {/* PART B */}
-                <div className="break-before-page">
-                    <h3 className="text-2xl font-bold text-blue-900 mb-6 border-b pb-2">Parte B: Ficha de Conceptualización</h3>
+                    <h3 className="text-2xl font-bold text-blue-900 mb-6 border-b pb-2">Parte 1: Ficha de Conceptualización (Grupal)</h3>
                     
-                    <div className="border-2 border-gray-800 p-8 rounded-lg bg-white">
-                        <div className="grid gap-8">
-                            <div>
-                                <h4 className="text-xs font-bold uppercase text-gray-500 mb-1">Nombre del Restaurante</h4>
-                                <div className="text-3xl font-serif text-gray-900">{state.concept.name || "____________________"}</div>
+                    <div className="border-2 border-gray-800 p-8 rounded-lg bg-white relative overflow-hidden">
+                        {state.concept.restaurantLogo && (
+                            <div className="absolute top-4 right-4 opacity-20">
+                                <img src={state.concept.restaurantLogo} alt="Logo" className="h-24 w-auto grayscale" />
+                            </div>
+                        )}
+                        <div className="grid gap-8 relative z-10">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h4 className="text-xs font-bold uppercase text-gray-500 mb-1">Nombre del Restaurante</h4>
+                                    <div className="text-3xl font-serif text-gray-900">{state.concept.name || "____________________"}</div>
+                                </div>
+                                {state.concept.restaurantLogo && (
+                                    <img src={state.concept.restaurantLogo} alt="Logo" className="h-20 w-auto object-contain" />
+                                )}
                             </div>
                             
                             <div>
@@ -313,6 +326,38 @@ export const Task2_Analysis: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div className="page-break" />
+
+                {/* PART 2: INDIVIDUAL RESEARCH (NOW SECOND) */}
+                <div className="break-before-page">
+                    <h3 className="text-2xl font-bold text-blue-900 mb-6 border-b pb-2">Parte 2: Anexos de Investigación (Individual)</h3>
+                    <p className="text-sm text-gray-600 mb-4 italic">Informes asignados a: {state.team.find(m => m.id === state.currentUser)?.name}</p>
+                    
+                    <div className="space-y-6">
+                        {state.task2.tasks
+                            .filter(task => task.assignedToId === state.currentUser)
+                            .map(task => (
+                                <div key={task.id} className="break-inside-avoid mb-6 bg-gray-50 p-4 rounded border border-gray-200">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold text-gray-800">{task.title}</h4>
+                                        <span className="text-xs bg-white px-2 py-1 rounded border">
+                                            ID Tarea: {task.id}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                        {task.content || <span className="text-gray-400 italic">Contenido no completado.</span>}
+                                    </p>
+                                </div>
+                            ))
+                        }
+                        {state.task2.tasks.filter(task => task.assignedToId === state.currentUser).length === 0 && (
+                            <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-xl">
+                                <p className="text-gray-400 italic">No tienes tareas de investigación asignadas en el reparto global.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

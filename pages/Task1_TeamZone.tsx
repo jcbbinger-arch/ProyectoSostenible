@@ -74,31 +74,39 @@ export const Task1_TeamZone: React.FC = () => {
             <h2 className="text-3xl font-bold text-gray-900">Tarea 1: Constitución del Equipo y Zona</h2>
             <p className="text-gray-600 mt-2">Fase 0 - Preparación | Entrega: Semana 1</p>
         </div>
-        <div className="flex gap-2">
-            <button 
-                onClick={() => setActiveTab('instructions')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'instructions' ? 'bg-gray-200 text-gray-900' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-                Instrucciones
-            </button>
-            <button 
-                onClick={() => setActiveTab('development')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'development' ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-                Desarrollo
-            </button>
-            <button 
-                onClick={() => setActiveTab('distribution')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'distribution' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-                Reparto Global
-            </button>
-            <button 
-                onClick={() => setActiveTab('deliverable')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'deliverable' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-                Entregable
-            </button>
+        <div className="flex gap-4 items-center">
+            <div className="bg-white border border-gray-200 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
+                <div className="text-right">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Código del Proyecto</p>
+                    <p className="text-lg font-mono font-black text-green-600 leading-none mt-1">{state.code}</p>
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <button 
+                    onClick={() => setActiveTab('instructions')}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'instructions' ? 'bg-gray-200 text-gray-900' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                    Instrucciones
+                </button>
+                <button 
+                    onClick={() => setActiveTab('development')}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'development' ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                    Desarrollo
+                </button>
+                <button 
+                    onClick={() => setActiveTab('distribution')}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'distribution' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                    Reparto Global
+                </button>
+                <button 
+                    onClick={() => setActiveTab('deliverable')}
+                    className={`px-4 py-2 rounded-lg font-medium transition ${activeTab === 'deliverable' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                    Entregable
+                </button>
+            </div>
         </div>
       </div>
 

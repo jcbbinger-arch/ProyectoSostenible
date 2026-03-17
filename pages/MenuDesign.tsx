@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useProject } from '../context/ProjectContext';
-import { Dish, DishType, IngredientRow } from '../types';
+import { Dish, DishType, IngredientRow, SeasonalProductContribution } from '../types';
 import { ALLERGENS } from '../constants';
-import { Plus, Trash2, Edit2, Image as ImageIcon, AlertCircle, BookOpen, PenTool, ClipboardList, Save } from 'lucide-react';
+import { Plus, Trash2, Edit2, Image as ImageIcon, AlertCircle, BookOpen, PenTool, ClipboardList, Save, Leaf, Printer } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const MenuDesign: React.FC = () => {
-  const { state, addDish, removeDish, updateDish } = useProject();
-  const [activeTab, setActiveTab] = useState<'instructions' | 'design' | 'review'>('instructions');
+  const { state, addDish, removeDish, updateDish, updateSeasonalProducts } = useProject();
+  const [activeTab, setActiveTab] = useState<'instructions' | 'seasonal' | 'design' | 'review' | 'deliverable'>('instructions');
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<number>(1);
   
@@ -165,6 +165,12 @@ export const MenuDesign: React.FC = () => {
                 <BookOpen size={18} /> Instrucciones
             </button>
             <button 
+                onClick={() => setActiveTab('seasonal')}
+                className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'seasonal' ? 'bg-amber-600 text-white' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
+            >
+                <Leaf size={18} /> Productos Temporada
+            </button>
+            <button 
                 onClick={() => { setActiveTab('design'); setIsEditing(null); }}
                 className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'design' ? 'bg-green-600 text-white' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
             >
@@ -175,6 +181,12 @@ export const MenuDesign: React.FC = () => {
                 className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'review' ? 'bg-purple-600 text-white' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
             >
                 <ClipboardList size={18} /> Ver Carta Completa
+            </button>
+            <button 
+                onClick={() => setActiveTab('deliverable')}
+                className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${activeTab === 'deliverable' ? 'bg-slate-900 text-white' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}
+            >
+                <Printer size={18} /> Entregable Tarea 3
             </button>
         </div>
       </div>
@@ -197,11 +209,102 @@ export const MenuDesign: React.FC = () => {
             
             <p><strong>Nota sobre Costes:</strong> En esta ficha indicarás los ingredientes y cantidades. El cálculo económico real se hará automáticamente en la <strong>Tarea 5 (Escandallo)</strong>, y el precio final aparecerá aquí una vez calculado.</p>
 
-            <div className="mt-6 flex justify-center">
+            <div className="bg-amber-50 p-6 rounded-lg border-l-4 border-amber-500 mt-6">
+                <h4 className="font-bold text-amber-900 mt-0">Novedad: Productos de Temporada</h4>
+                <p className="text-sm">Antes de diseñar tus platos, debes completar la sección de <strong>Productos de Temporada</strong>. Esta investigación es fundamental para justificar la elección de tus ingredientes y la sostenibilidad de tu propuesta.</p>
+            </div>
+
+            <div className="mt-6 flex justify-center gap-4">
+                 <button onClick={() => setActiveTab('seasonal')} className="bg-amber-600 text-white px-8 py-3 rounded-full font-bold shadow hover:bg-amber-700">
+                    Completar Productos de Temporada
+                 </button>
                  <button onClick={() => { setActiveTab('design'); setIsEditing(null); }} className="bg-green-600 text-white px-8 py-3 rounded-full font-bold shadow hover:bg-green-700">
                     Ir a Mis Platos
                  </button>
             </div>
+        </div>
+      )}
+
+      {/* TAB: SEASONAL PRODUCTS */}
+      {activeTab === 'seasonal' && (
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+            <div className="mb-6 border-b pb-4">
+                <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <Leaf className="text-amber-600" /> 1. Selección de Productos de Temporada
+                </h3>
+                <p className="text-gray-600 text-sm mt-1">Esta sección es básica para entender el porqué de los platos elaborados en la carta.</p>
+            </div>
+
+            {(() => {
+                const myContribution = state.seasonalProducts.find(p => p.memberId === state.currentUser) || {
+                    productList: '',
+                    sustainability: '',
+                    impactAnalysis: '',
+                    sources: ['', '', '']
+                };
+
+                return (
+                    <div className="space-y-6 max-w-4xl">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Lista de productos (ej. “Alcachofas, Murcia, km0”)</label>
+                            <textarea 
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 h-24"
+                                placeholder="Escribe aquí los productos que has seleccionado..."
+                                value={myContribution.productList}
+                                onChange={(e) => updateSeasonalProducts({ productList: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Sostenibilidad (ej. “Reduce emisiones, ODS 12”)</label>
+                            <input 
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                placeholder="Justifica la sostenibilidad de estos productos..."
+                                value={myContribution.sustainability}
+                                onChange={(e) => updateSeasonalProducts({ sustainability: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Análisis de impacto (si es posible, ej. “Baja huella de carbono”)</label>
+                            <input 
+                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+                                placeholder="Describe el impacto ambiental positivo..."
+                                value={myContribution.impactAnalysis}
+                                onChange={(e) => updateSeasonalProducts({ impactAnalysis: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Fuentes (mínimo 3)</label>
+                            <div className="space-y-2">
+                                {[0, 1, 2].map(idx => (
+                                    <input 
+                                        key={idx}
+                                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 text-sm"
+                                        placeholder={`Fuente ${idx + 1}`}
+                                        value={myContribution.sources[idx] || ''}
+                                        onChange={(e) => {
+                                            const newSources = [...(myContribution.sources || ['', '', ''])];
+                                            newSources[idx] = e.target.value;
+                                            updateSeasonalProducts({ sources: newSources });
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex justify-end">
+                             <button 
+                                onClick={() => setActiveTab('design')}
+                                className="bg-amber-600 text-white px-8 py-3 rounded-lg font-bold shadow hover:bg-amber-700 flex items-center gap-2"
+                             >
+                                <Save size={18} /> Guardar e ir a Mis Platos
+                             </button>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
       )}
 
@@ -565,9 +668,9 @@ export const MenuDesign: React.FC = () => {
 
       {/* TAB 3: REVIEW */}
       {activeTab === 'review' && (
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Carta Completa del Restaurante</h3>
-            <p className="text-gray-600 mb-8">
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Carta Completa del Restaurante</h3>
+            <p className="text-gray-600 mb-8 text-center">
                 Aquí puedes ver todos los platos creados por tus compañeros.
             </p>
 
@@ -601,6 +704,167 @@ export const MenuDesign: React.FC = () => {
                     )
                 })}
                  {state.dishes.length === 0 && <p className="text-gray-400 italic text-center">No hay platos en la carta aún.</p>}
+            </div>
+        </div>
+      )}
+
+      {/* TAB: DELIVERABLE */}
+      {activeTab === 'deliverable' && (
+        <div className="bg-slate-50 p-8 rounded-xl border border-slate-200 animate-fade-in">
+            <div className="flex justify-between items-center mb-8 no-print">
+                <h3 className="text-2xl font-bold text-slate-800">Vista Previa del Entregable Tarea 3</h3>
+                <button 
+                    onClick={() => window.print()}
+                    className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-slate-800 shadow-lg"
+                >
+                    <Printer size={18} /> Imprimir Tarea 3
+                </button>
+            </div>
+
+            <div className="bg-white p-12 shadow-2xl rounded-lg max-w-4xl mx-auto print:shadow-none print:p-0">
+                {/* Header */}
+                <div className="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-8">
+                    <div>
+                        <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Tarea 3: Diseño de Carta</h1>
+                        <p className="text-slate-500 font-bold mt-1 uppercase tracking-widest text-sm">Proyecto: {state.concept.name || 'Sin Nombre'}</p>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-sm font-bold text-slate-400 uppercase">Alumno/a</div>
+                        <div className="text-xl font-bold text-slate-900">{state.team.find(m => m.id === state.currentUser)?.name || 'Estudiante'}</div>
+                    </div>
+                </div>
+
+                {/* Part 1: Seasonal Products (Group/Aggregated) */}
+                <div className="mb-12">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-6 border-b-2 border-slate-200 pb-2 flex items-center gap-2">
+                        <Leaf size={24} className="text-amber-600" /> Parte 1: Selección de Productos de Temporada (Grupal)
+                    </h2>
+                    <p className="text-sm text-slate-500 mb-6 italic">A continuación se muestra la recopilación de productos de temporada aportada por cada miembro del equipo.</p>
+                    
+                    <div className="space-y-6">
+                        {state.team.map(member => {
+                            const contribution = state.seasonalProducts.find(p => p.memberId === member.id);
+                            if (!contribution) return null;
+                            return (
+                                <div key={member.id} className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                                    <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
+                                        <h4 className="font-bold text-slate-800 uppercase text-xs tracking-widest">Aportación de: {member.name}</h4>
+                                    </div>
+                                    <div className="grid gap-4 text-sm">
+                                        <div>
+                                            <span className="font-bold text-slate-900 block mb-1">Lista de productos:</span>
+                                            <p className="text-slate-700 whitespace-pre-wrap">{contribution.productList || '---'}</p>
+                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <span className="font-bold text-slate-900 block mb-1">Sostenibilidad:</span>
+                                                <p className="text-slate-700">{contribution.sustainability || '---'}</p>
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-slate-900 block mb-1">Análisis de impacto:</span>
+                                                <p className="text-slate-700">{contribution.impactAnalysis || '---'}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-900 block mb-1">Fuentes:</span>
+                                            <ul className="list-decimal pl-5 text-slate-600">
+                                                {contribution.sources.filter(s => s.trim()).map((s, i) => <li key={i}>{s}</li>)}
+                                                {contribution.sources.filter(s => s.trim()).length === 0 && <li>No se han indicado fuentes.</li>}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {state.seasonalProducts.length === 0 && (
+                            <div className="text-center p-8 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 text-slate-400">
+                                No hay datos de productos de temporada registrados aún.
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Part 2: Individual Dishes */}
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-6 border-b-2 border-slate-200 pb-2 flex items-center gap-2">
+                        <PenTool size={24} className="text-green-600" /> Parte 2: Fichas Técnicas Individuales
+                    </h2>
+                    <p className="text-sm text-slate-500 mb-6 italic">Platos diseñados individualmente por el alumno/a para la carta del restaurante.</p>
+
+                    <div className="space-y-12">
+                        {myDishes.map((dish, idx) => (
+                            <div key={dish.id} className="border-2 border-slate-900 rounded-xl overflow-hidden page-break-before">
+                                <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+                                    <h3 className="text-xl font-bold uppercase tracking-tighter">{idx + 1}. {dish.name}</h3>
+                                    <span className="bg-white text-slate-900 px-3 py-1 rounded-full text-xs font-black uppercase">{dish.type}</span>
+                                </div>
+                                
+                                <div className="p-8 grid md:grid-cols-2 gap-8">
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Descripción Comercial</h4>
+                                            <p className="text-slate-700 italic leading-relaxed">"{dish.description || 'Sin descripción.'}"</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Ingredientes Principales</h4>
+                                            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-700">
+                                                {dish.ingredients.map(ing => (
+                                                    <li key={ing.id} className="flex justify-between border-b border-slate-100 py-1">
+                                                        <span>{ing.name}</span>
+                                                        <span className="font-bold">{ing.quantity}{ing.unit}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Alérgenos</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {dish.allergens.length > 0 ? dish.allergens.map(aId => {
+                                                    const allergen = ALLERGENS.find(a => a.id === aId);
+                                                    return (
+                                                        <span key={aId} className="bg-red-50 text-red-700 border border-red-200 px-2 py-1 rounded text-xs flex items-center gap-1">
+                                                            {allergen?.icon} {allergen?.name}
+                                                        </span>
+                                                    );
+                                                }) : <span className="text-xs text-slate-400">Sin alérgenos declarados.</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        {dish.photo && (
+                                            <div className="border-4 border-slate-100 rounded-lg overflow-hidden shadow-sm">
+                                                <img src={dish.photo} alt={dish.name} className="w-full h-48 object-cover" />
+                                            </div>
+                                        )}
+                                        
+                                        <div>
+                                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Elaboración Técnica</h4>
+                                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{dish.elaboration || 'No se ha detallado la elaboración.'}</p>
+                                        </div>
+
+                                        <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                                            <h4 className="text-xs font-bold text-green-700 uppercase mb-2">Justificación Sostenible</h4>
+                                            <p className="text-xs text-green-800 italic">{dish.sustainabilityJustification || 'No se ha detallado la justificación.'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {myDishes.length === 0 && (
+                            <div className="text-center p-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 text-slate-400">
+                                No has creado ningún plato para esta tarea aún.
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-12 pt-8 border-t border-slate-200 text-center text-[10px] text-slate-400 uppercase tracking-widest">
+                    Documento generado por Murcia Sostenible Project Manager • {new Date().toLocaleDateString()}
+                </div>
             </div>
         </div>
       )}

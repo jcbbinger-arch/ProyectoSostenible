@@ -67,9 +67,9 @@ export const Landing: React.FC = () => {
                 <Users size={100} />
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-6 font-bold text-xl">1</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Equipo y Zona</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Equipo y Sincronización</h3>
               <p className="text-gray-600">
-                Registra a los miembros de tu equipo, asigna roles (Coordinador, Chef, etc.) y selecciona una de las <strong>10 zonas gastronómicas</strong> de Murcia.
+                Crea tu proyecto y obtén un <strong>Código de Equipo</strong>. Tus compañeros solo necesitan ese código para unirse y trabajar todos a la vez.
               </p>
             </div>
 
@@ -79,9 +79,9 @@ export const Landing: React.FC = () => {
                 <Target size={100} />
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 mb-6 font-bold text-xl">2</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Análisis y Concepto</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Tarea 2: Análisis y Concepto</h3>
               <p className="text-gray-600">
-                Realiza investigaciones de mercado asignadas individualmente. Define el nombre, eslogan y valores que harán única tu marca.
+                Realiza investigaciones de mercado asignadas individualmente y definid en grupo el nombre, eslogan y valores de vuestra marca.
               </p>
             </div>
 
@@ -165,8 +165,8 @@ export const Landing: React.FC = () => {
                   <Users size={20} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-900">Trabajo Colaborativo</h4>
-                  <p className="text-gray-600 text-sm">Sistema de importación/exportación de archivos JSON para que cada miembro del equipo trabaje en su parte y luego se fusione todo.</p>
+                  <h4 className="font-bold text-gray-900">Trabajo Colaborativo Real</h4>
+                  <p className="text-gray-600 text-sm">Se acabó el enviarse archivos. Todos los miembros del equipo ven los cambios de los demás al instante gracias a la base de datos en la nube.</p>
                 </div>
               </div>
             </div>
@@ -207,7 +207,7 @@ export const Landing: React.FC = () => {
         <div className="max-w-4xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">¿Listo para empezar tu proyecto?</h2>
           <p className="text-gray-400 mb-8 text-lg">
-            No necesitas registrarte ni instalar nada. Todos los datos se guardan en tu navegador localmente.
+            Inicia sesión con tu cuenta de Google para empezar. Tus datos se guardarán de forma segura en la nube.
           </p>
           
           <div className="flex flex-col items-center gap-8">

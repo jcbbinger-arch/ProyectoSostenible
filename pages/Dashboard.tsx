@@ -204,7 +204,7 @@ export const Dashboard: React.FC = () => {
                     to="/task-2"
                     className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-3 active:scale-95"
                   >
-                      Ir al Análisis <ArrowRight size={18} />
+                      Ir a la Tarea 2 <ArrowRight size={18} />
                   </Link>
               </div>
           </div>

@@ -120,7 +120,8 @@ export const INITIAL_STATE: ProjectState = {
     name: '',
     slogan: '',
     targetAudience: '',
-    values: []
+    values: [],
+    restaurantLogo: null
   },
   missions: {
     explorer: { mapUrl: '', menuAnalysis: '', gapAnalysis: '' },
@@ -140,5 +141,47 @@ export const INITIAL_STATE: ProjectState = {
     editorIds: []
   },
   team: [],
-  coEvaluations: []
+  seasonalProducts: [],
+  coEvaluations: [],
+  interimReport: {
+    summary: '',
+    introduction: {
+      context: '',
+      objectives: '',
+      scope: ''
+    },
+    analysis: {
+      companies: {
+        identification: '',
+        economicAnalysis: '',
+        selectionJustification: ''
+      },
+      products: {
+        identification: '',
+        targetAudience: '',
+        differentiation: ''
+      },
+      ods: {
+        identification: '',
+        justification: ''
+      },
+      laborRisks: {
+        identification: '',
+        measures: ''
+      },
+      conclusions: {
+        synthesis: '',
+        proposals: ''
+      }
+    },
+    development: {
+      planning: '',
+      methodology: '',
+      resources: ''
+    },
+    results: '',
+    conclusions: '',
+    recommendations: '',
+    bibliography: ''
+  }
 };
