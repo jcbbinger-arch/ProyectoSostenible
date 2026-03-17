@@ -3,6 +3,8 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut, 
   onAuthStateChanged,
   User as FirebaseUser
@@ -103,7 +105,7 @@ async function testConnection() {
 testConnection();
 
 export { 
-  doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, addDoc, Timestamp, serverTimestamp, onAuthStateChanged, signInWithPopup, signOut, deleteDoc
+  doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, getDocs, addDoc, Timestamp, serverTimestamp, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, deleteDoc
 };
 
 export type { FirebaseUser };
