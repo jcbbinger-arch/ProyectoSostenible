@@ -72,7 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           unsubProfile = onSnapshot(userRef, async (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as UserProfile;
-              const isAdminEmail = firebaseUser.email === 'managerproapp@gmail.com';
+              const email = firebaseUser.email?.toLowerCase().trim() || '';
+              const isAdminEmail = email === 'managerproapp@gmail.com' || email === 'managerapp@gmail.com';
               const isJcbEmail = firebaseUser.email === 'jcbbinger@gmail.com';
               
               // Force admin role if email matches
@@ -114,7 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLoading(false);
             } else {
               // Crear perfil si no existe
-              const isAdminEmail = firebaseUser.email === 'managerproapp@gmail.com';
+              const email = firebaseUser.email?.toLowerCase().trim() || '';
+              const isAdminEmail = email === 'managerproapp@gmail.com' || email === 'managerapp@gmail.com';
               const newProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',

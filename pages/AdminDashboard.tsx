@@ -54,7 +54,8 @@ export const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const isSuperAdmin = realProfile?.role === 'admin';
-  const ROOT_ADMIN_EMAIL = 'managerproapp@gmail.com';
+  const ROOT_ADMIN_EMAILS = ['managerproapp@gmail.com', 'managerapp@gmail.com'];
+  const isRootAdmin = (email: string) => ROOT_ADMIN_EMAILS.includes(email.toLowerCase().trim());
 
   useEffect(() => {
     if (realProfile?.role !== 'admin' && realProfile?.role !== 'assistant') return;
@@ -87,7 +88,7 @@ export const AdminDashboard: React.FC = () => {
   const approveUser = async (uid: string) => {
     if (!isSuperAdmin) return;
     const targetUser = allUsers.find(u => u.uid === uid);
-    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
+    if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
       await updateDoc(doc(db, 'users', uid), { status: 'approved' });
     } catch (error) {
@@ -98,7 +99,7 @@ export const AdminDashboard: React.FC = () => {
   const handleRoleChange = async (uid: string, newRole: 'admin' | 'student' | 'assistant') => {
     if (!isSuperAdmin) return;
     const targetUser = allUsers.find(u => u.uid === uid);
-    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
+    if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
       await updateDoc(doc(db, 'users', uid), { role: newRole });
     } catch (error) {
@@ -118,7 +119,7 @@ export const AdminDashboard: React.FC = () => {
   const rejectUser = async (uid: string) => {
     if (!isSuperAdmin) return;
     const targetUser = allUsers.find(u => u.uid === uid);
-    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
+    if (targetUser && isRootAdmin(targetUser.email)) return;
     if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente a este usuario?")) return;
     try {
       await deleteDoc(doc(db, 'users', uid));
@@ -130,7 +131,7 @@ export const AdminDashboard: React.FC = () => {
   const suspendUser = async (uid: string, currentStatus: string) => {
     if (!isSuperAdmin) return;
     const targetUser = allUsers.find(u => u.uid === uid);
-    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
+    if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
       const newStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
       await updateDoc(doc(db, 'users', uid), { status: newStatus });
@@ -141,7 +142,7 @@ export const AdminDashboard: React.FC = () => {
 
   const resetUser = async (user: UserProfile) => {
     if (!isSuperAdmin) return;
-    if (user.email === ROOT_ADMIN_EMAIL) return;
+    if (isRootAdmin(user.email)) return;
     if (!window.confirm(`¿Estás seguro de que quieres reiniciar la cuenta de ${user.displayName}? Se eliminará su vinculación con cualquier proyecto y volverá a estado pendiente.`)) return;
     try {
       await updateDoc(doc(db, 'users', user.uid), { 
@@ -307,7 +308,7 @@ export const AdminDashboard: React.FC = () => {
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Rol del Usuario</label>
                       <div className="flex gap-1">
                         {(['student', 'assistant', 'admin'] as const).map((role) => {
-                          const isRootUser = user.email === ROOT_ADMIN_EMAIL;
+                          const isRootUser = isRootAdmin(user.email);
                           return (
                             <button
                               key={role}
@@ -349,7 +350,7 @@ export const AdminDashboard: React.FC = () => {
                     ) : (
                       <div className="flex flex-col gap-2 w-full">
                         <div className="flex gap-2 w-full">
-                          {user.email !== ROOT_ADMIN_EMAIL && (
+                          {!isRootAdmin(user.email) && (
                             <button
                               onClick={() => impersonateUser(user.uid)}
                               className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all"
@@ -358,7 +359,7 @@ export const AdminDashboard: React.FC = () => {
                               Suplantar
                             </button>
                           )}
-                          {isSuperAdmin && user.uid !== realProfile?.uid && user.email !== ROOT_ADMIN_EMAIL && (
+                          {isSuperAdmin && user.uid !== realProfile?.uid && !isRootAdmin(user.email) && (
                             <div className="flex gap-1">
                               <button
                                 onClick={() => suspendUser(user.uid, user.status)}

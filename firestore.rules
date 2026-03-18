@@ -18,7 +18,8 @@ service cloud.firestore {
       return isAuthenticated() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != 'suspended' && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        request.auth.token.email == "managerproapp@gmail.com"
+        request.auth.token.email == "managerproapp@gmail.com" ||
+        request.auth.token.email == "managerapp@gmail.com"
       );
     }
 
@@ -72,18 +73,19 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (isOwner(uid) || isAdmin());
       allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data);
       allow update: if isAuthenticated() && (
-        // Si es el admin principal, nadie (ni él mismo) puede cambiar su rol o estado
+        // Si es un admin principal (por email en token), tiene permiso total sobre perfiles
+        (request.auth.token.email == "managerproapp@gmail.com" || request.auth.token.email == "managerapp@gmail.com") ||
+        // Si es el admin principal en el documento, nadie puede cambiar su rol o estado a algo que no sea admin/approved
         (resource.data.email == "managerproapp@gmail.com" && 
          request.resource.data.role == "admin" && 
-         request.resource.data.status == "approved" &&
-         (isOwner(uid) || isAdmin())) ||
+         request.resource.data.status == "approved") ||
         // Para otros usuarios
-        (resource.data.email != "managerproapp@gmail.com" && (
+        (resource.data.email != "managerproapp@gmail.com" && resource.data.email != "managerapp@gmail.com" && (
           (isOwner(uid) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
           isAdmin()
         ))
       );
-      allow delete: if isAdmin() && resource.data.email != "managerproapp@gmail.com";
+      allow delete: if isAdmin() && resource.data.email != "managerproapp@gmail.com" && resource.data.email != "managerapp@gmail.com";
     }
 
     // Projects Collection

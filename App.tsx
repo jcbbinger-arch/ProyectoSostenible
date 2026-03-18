@@ -75,15 +75,17 @@ const AppContent = () => {
     );
   }
 
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'assistant';
+
   return (
     <HashRouter>
       {!user ? (
         <Login />
-      ) : (profile?.role === 'admin' || profile?.role === 'assistant') && !profile?.projectId ? (
+      ) : isAdmin && !profile?.projectId ? (
         <AdminDashboard />
       ) : profile?.status === 'suspended' ? (
         <SuspendedAccount />
-      ) : profile?.status === 'pending' ? (
+      ) : profile?.status === 'pending' && !isAdmin ? (
         <WaitingRoom />
       ) : !profile?.projectId ? (
         <ProjectAccess />
