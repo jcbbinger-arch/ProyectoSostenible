@@ -140,6 +140,29 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const deleteProject = async (projectId: string) => {
+    if (!isSuperAdmin) return;
+    if (!window.confirm("¿Estás seguro de que quieres eliminar este proyecto permanentemente? Todos los alumnos vinculados volverán a estar sin proyecto.")) return;
+    
+    try {
+      // 1. Find all users in this project and reset them
+      const usersInProject = allUsers.filter(u => u.projectId === projectId);
+      const resetPromises = usersInProject.map(u => 
+        updateDoc(doc(db, 'users', u.uid), { 
+          projectId: null,
+          status: 'pending' // Optional: move back to pending so admin re-approves them for a new project
+        })
+      );
+      
+      await Promise.all(resetPromises);
+      
+      // 2. Delete the project document
+      await deleteDoc(doc(db, 'projects', projectId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}`);
+    }
+  };
+
   const resetUser = async (user: UserProfile) => {
     if (!isSuperAdmin) return;
     if (isRootAdmin(user.email)) return;
@@ -456,7 +479,11 @@ export const AdminDashboard: React.FC = () => {
                           >
                             <ExternalLink className="w-5 h-5" />
                           </button>
-                          <button className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Eliminar">
+                          <button 
+                            onClick={() => deleteProject(project.id)}
+                            className="p-2 text-slate-400 hover:text-red-600 transition-colors" 
+                            title="Eliminar"
+                          >
                             <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
