@@ -105,8 +105,8 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-        {/* Admin Back Button */}
-        {isAdmin && (
+        {/* Admin/Assistant Back Button */}
+        {(isAdmin || isAssistant) && (
             <button 
                 onClick={exitProject}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors mb-4"
@@ -130,7 +130,7 @@ export const Sidebar: React.FC = () => {
                 label="Guía Académica" 
                 colorClass="bg-yellow-50 text-yellow-800 border border-yellow-200"
             />
-            {isAdmin && (
+            {(isAdmin || isAssistant) && (
                 <NavItem 
                     to="/teacher-eval" 
                     icon={<ShieldCheck size={18} className="text-emerald-600" />} 

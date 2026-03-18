@@ -17,7 +17,9 @@ import {
   UserCheck,
   Ghost,
   ShieldAlert,
-  LogOut
+  LogOut,
+  Info,
+  Copy
 } from 'lucide-react';
 
 interface UserProfile {
@@ -196,20 +198,51 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-            />
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.origin);
+                // Simple feedback
+                const btn = document.activeElement as HTMLButtonElement;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '¡Copiado!';
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+              }}
+              className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all"
+            >
+              <Copy className="w-4 h-4" />
+              Copiar Enlace de Registro
+            </button>
+
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+              />
+            </div>
           </div>
         </header>
 
         {activeTab === 'users' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <>
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
+              <div className="bg-blue-100 p-2 rounded-xl">
+                <Info className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-blue-900">¿Cómo dar de alta a alumnos y profesores?</h4>
+                <p className="text-xs text-blue-700 leading-relaxed mt-1">
+                  Los usuarios deben iniciar sesión primero con su cuenta de Google. Una vez que lo hagan, aparecerán aquí como <strong>"Pendientes"</strong>. 
+                  Usa el botón verde para aprobar su acceso y selecciona su rol (Alumno, Asistente o Admin).
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredUsers.length === 0 ? (
               <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
                 <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -295,7 +328,8 @@ export const AdminDashboard: React.FC = () => {
               ))
             )}
           </div>
-        )}
+        </>
+      )}
 
         {activeTab === 'projects' && (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">

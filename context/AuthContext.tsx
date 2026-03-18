@@ -108,14 +108,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLoading(false);
             } else {
               // Crear perfil si no existe
-              const isAdmin = firebaseUser.email === 'jcbbinger@gmail.com' || firebaseUser.email === 'managerproapp@gmail.com';
+              // Por defecto, todos los nuevos perfiles entran como 'student' y 'pending'
               const newProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
                 displayName: firebaseUser.displayName || '',
                 photoURL: firebaseUser.photoURL || '',
-                role: isAdmin ? 'admin' : 'student',
-                status: isAdmin ? 'approved' : 'pending',
+                role: 'student',
+                status: 'pending',
               };
               try {
                 await setDoc(userRef, newProfile);

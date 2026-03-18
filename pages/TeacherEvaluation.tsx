@@ -9,7 +9,7 @@ export const TeacherEvaluation: React.FC = () => {
   const { state } = useProject();
   const { profile } = useAuth();
 
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== 'admin' && profile?.role !== 'assistant') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
         <AlertCircle size={64} className="text-red-500 mb-4" />

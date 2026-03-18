@@ -77,7 +77,7 @@ const AppContent = () => {
     <HashRouter>
       {!user ? (
         <Login />
-      ) : profile?.role === 'admin' && !profile?.projectId ? (
+      ) : (profile?.role === 'admin' || profile?.role === 'assistant') && !profile?.projectId ? (
         <AdminDashboard />
       ) : profile?.status === 'pending' ? (
         <WaitingRoom />
