@@ -54,6 +54,7 @@ export const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const isSuperAdmin = realProfile?.role === 'admin';
+  const ROOT_ADMIN_EMAIL = 'managerproapp@gmail.com';
 
   useEffect(() => {
     if (realProfile?.role !== 'admin' && realProfile?.role !== 'assistant') return;
@@ -85,6 +86,8 @@ export const AdminDashboard: React.FC = () => {
 
   const approveUser = async (uid: string) => {
     if (!isSuperAdmin) return;
+    const targetUser = allUsers.find(u => u.uid === uid);
+    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
     try {
       await updateDoc(doc(db, 'users', uid), { status: 'approved' });
     } catch (error) {
@@ -94,6 +97,8 @@ export const AdminDashboard: React.FC = () => {
 
   const handleRoleChange = async (uid: string, newRole: 'admin' | 'student' | 'assistant') => {
     if (!isSuperAdmin) return;
+    const targetUser = allUsers.find(u => u.uid === uid);
+    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
     try {
       await updateDoc(doc(db, 'users', uid), { role: newRole });
     } catch (error) {
@@ -112,6 +117,8 @@ export const AdminDashboard: React.FC = () => {
 
   const rejectUser = async (uid: string) => {
     if (!isSuperAdmin) return;
+    const targetUser = allUsers.find(u => u.uid === uid);
+    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
     if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente a este usuario?")) return;
     try {
       await deleteDoc(doc(db, 'users', uid));
@@ -122,6 +129,8 @@ export const AdminDashboard: React.FC = () => {
 
   const suspendUser = async (uid: string, currentStatus: string) => {
     if (!isSuperAdmin) return;
+    const targetUser = allUsers.find(u => u.uid === uid);
+    if (targetUser?.email === ROOT_ADMIN_EMAIL) return;
     try {
       const newStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
       await updateDoc(doc(db, 'users', uid), { status: newStatus });
@@ -132,6 +141,7 @@ export const AdminDashboard: React.FC = () => {
 
   const resetUser = async (user: UserProfile) => {
     if (!isSuperAdmin) return;
+    if (user.email === ROOT_ADMIN_EMAIL) return;
     if (!window.confirm(`¿Estás seguro de que quieres reiniciar la cuenta de ${user.displayName}? Se eliminará su vinculación con cualquier proyecto y volverá a estado pendiente.`)) return;
     try {
       await updateDoc(doc(db, 'users', user.uid), { 
@@ -293,25 +303,28 @@ export const AdminDashboard: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="mb-4">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Rol del Usuario</label>
-                    <div className="flex gap-1">
-                      {(['student', 'assistant', 'admin'] as const).map((role) => (
-                        <button
-                          key={role}
-                          disabled={!isSuperAdmin || user.uid === realProfile?.uid}
-                          onClick={() => handleRoleChange(user.uid, role)}
-                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                            user.role === role 
-                              ? 'bg-slate-900 text-white shadow-sm' 
-                              : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {role === 'admin' ? 'ADMIN' : role === 'assistant' ? 'ASISTENTE' : 'ALUMNO'}
-                        </button>
-                      ))}
+                    <div className="mb-4">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Rol del Usuario</label>
+                      <div className="flex gap-1">
+                        {(['student', 'assistant', 'admin'] as const).map((role) => {
+                          const isRootUser = user.email === ROOT_ADMIN_EMAIL;
+                          return (
+                            <button
+                              key={role}
+                              disabled={!isSuperAdmin || user.uid === realProfile?.uid || isRootUser}
+                              onClick={() => handleRoleChange(user.uid, role)}
+                              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                                user.role === role 
+                                  ? 'bg-slate-900 text-white shadow-sm' 
+                                  : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {role === 'admin' ? 'ADMIN' : role === 'assistant' ? 'ASISTENTE' : 'ALUMNO'}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
                   
                   <div className="mt-auto flex gap-2">
                     {user.status === 'pending' ? (
@@ -336,14 +349,16 @@ export const AdminDashboard: React.FC = () => {
                     ) : (
                       <div className="flex flex-col gap-2 w-full">
                         <div className="flex gap-2 w-full">
-                          <button
-                            onClick={() => impersonateUser(user.uid)}
-                            className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all"
-                          >
-                            <Ghost className="w-4 h-4" />
-                            Suplantar
-                          </button>
-                          {isSuperAdmin && user.uid !== realProfile?.uid && (
+                          {user.email !== ROOT_ADMIN_EMAIL && (
+                            <button
+                              onClick={() => impersonateUser(user.uid)}
+                              className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all"
+                            >
+                              <Ghost className="w-4 h-4" />
+                              Suplantar
+                            </button>
+                          )}
+                          {isSuperAdmin && user.uid !== realProfile?.uid && user.email !== ROOT_ADMIN_EMAIL && (
                             <div className="flex gap-1">
                               <button
                                 onClick={() => suspendUser(user.uid, user.status)}

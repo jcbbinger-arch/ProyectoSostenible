@@ -18,8 +18,7 @@ service cloud.firestore {
       return isAuthenticated() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != 'suspended' && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        request.auth.token.email == "managerproapp@gmail.com" ||
-        request.auth.token.email == "jcbbinger@gmail.com"
+        request.auth.token.email == "managerproapp@gmail.com"
       );
     }
 
@@ -73,10 +72,18 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (isOwner(uid) || isAdmin());
       allow create: if isAuthenticated() && isOwner(uid) && isValidUser(request.resource.data);
       allow update: if isAuthenticated() && (
-        (isOwner(uid) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
-        isAdmin()
+        // Si es el admin principal, nadie (ni él mismo) puede cambiar su rol o estado
+        (resource.data.email == "managerproapp@gmail.com" && 
+         request.resource.data.role == "admin" && 
+         request.resource.data.status == "approved" &&
+         (isOwner(uid) || isAdmin())) ||
+        // Para otros usuarios
+        (resource.data.email != "managerproapp@gmail.com" && (
+          (isOwner(uid) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
+          isAdmin()
+        ))
       );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && resource.data.email != "managerproapp@gmail.com";
     }
 
     // Projects Collection

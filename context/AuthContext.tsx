@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           unsubProfile = onSnapshot(userRef, async (docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as UserProfile;
-              const isAdminEmail = firebaseUser.email === 'jcbbinger@gmail.com' || firebaseUser.email === 'managerproapp@gmail.com';
+              const isAdminEmail = firebaseUser.email === 'managerproapp@gmail.com';
               
               // Force admin role if email matches
               if (isAdminEmail && (data.role !== 'admin' || data.status !== 'approved')) {
