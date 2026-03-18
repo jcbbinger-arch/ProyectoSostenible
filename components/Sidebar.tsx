@@ -31,14 +31,21 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, colorClass }) => (
 
 export const Sidebar: React.FC = () => {
   const { state, resetProject } = useProject();
-  const { profile, logout } = useAuth();
-  const isAdmin = profile?.role === 'admin';
+  const { profile, realProfile, logout, impersonateUser } = useAuth();
+  const isAdmin = realProfile?.role === 'admin';
+  const isAssistant = realProfile?.role === 'assistant';
 
   const exitProject = async () => {
-    if (!profile?.uid) return;
+    if (!realProfile?.uid) return;
     try {
-      await updateDoc(doc(db, 'users', profile.uid), { projectId: null });
-      resetProject();
+      // Si estamos suplantando, detenemos la suplantación
+      if (realProfile.impersonatingUid) {
+        await impersonateUser(null);
+      } else {
+        // Si solo estamos viendo un proyecto con nuestro propio perfil
+        await updateDoc(doc(db, 'users', realProfile.uid), { projectId: null });
+        resetProject();
+      }
     } catch (error) {
       console.error("Error exiting project:", error);
     }

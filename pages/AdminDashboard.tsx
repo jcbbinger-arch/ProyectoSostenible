@@ -16,7 +16,8 @@ import {
   UserCog,
   UserCheck,
   Ghost,
-  ShieldAlert
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
 
 interface UserProfile {
@@ -40,7 +41,7 @@ interface ProjectSummary {
 }
 
 export const AdminDashboard: React.FC = () => {
-  const { profile, realProfile, impersonateUser } = useAuth();
+  const { profile, realProfile, impersonateUser, logout } = useAuth();
   const [pendingUsers, setPendingUsers] = useState<UserProfile[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectSummary[]>([]);
@@ -142,7 +143,7 @@ export const AdminDashboard: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'users' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
           >
             <Users className="w-5 h-5" />
-            <span className="font-medium">Usuarios Pendientes</span>
+            <span className="font-medium">Gestión de Usuarios</span>
             {pendingUsers.length > 0 && (
               <span className="ml-auto bg-white text-emerald-600 text-xs font-bold px-2 py-0.5 rounded-full">
                 {pendingUsers.length}
@@ -165,7 +166,7 @@ export const AdminDashboard: React.FC = () => {
           </button>
         </nav>
 
-        <div className="p-6 border-t border-slate-800">
+        <div className="p-6 border-t border-slate-800 space-y-4">
           <div className="flex items-center gap-3">
             <img src={profile?.photoURL} alt="" className="w-10 h-10 rounded-full border-2 border-emerald-400" />
             <div className="overflow-hidden">
@@ -173,6 +174,13 @@ export const AdminDashboard: React.FC = () => {
               <p className="text-xs text-slate-400 truncate">Administrador</p>
             </div>
           </div>
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-400 py-2 rounded-xl text-xs font-bold hover:bg-red-500 hover:text-white transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            Cerrar Sesión
+          </button>
         </div>
       </aside>
 
@@ -245,24 +253,24 @@ export const AdminDashboard: React.FC = () => {
                   
                   <div className="mt-auto flex gap-2">
                     {user.status === 'pending' ? (
-                      <>
+                      <div className="flex-1 flex gap-2">
                         <button
                           onClick={() => approveUser(user.uid)}
                           disabled={!isSuperAdmin}
-                          className="flex-1 flex items-center justify-center gap-2 bg-emerald-50 text-emerald-600 py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50"
+                          className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50"
                         >
                           <CheckCircle className="w-4 h-4" />
-                          Aprobar
+                          Aprobar Acceso
                         </button>
                         <button
                           onClick={() => rejectUser(user.uid)}
                           disabled={!isSuperAdmin}
-                          className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
+                          className="px-4 flex items-center justify-center bg-slate-100 text-slate-400 py-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                          title="Rechazar"
                         >
                           <XCircle className="w-4 h-4" />
-                          Rechazar
                         </button>
-                      </>
+                      </div>
                     ) : (
                       <>
                         <button

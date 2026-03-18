@@ -30,7 +30,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isLanding = location.pathname === '/';
   const { profile, realProfile, impersonateUser } = useAuth();
-  const isAdmin = profile?.role === 'admin';
   const isImpersonating = realProfile?.impersonatingUid != null;
 
   return (
@@ -53,9 +52,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </button>
         </div>
       )}
-      {!isLanding && !isAdmin && <Sidebar />}
+      {!isLanding && <Sidebar />}
       
-      <main className={`flex-1 transition-all duration-300 ${!isLanding && !isAdmin ? 'ml-64 print:ml-0 print:w-full' : ''} ${isImpersonating ? 'pt-12' : ''}`}>
+      <main className={`flex-1 transition-all duration-300 ${!isLanding ? 'ml-64 print:ml-0 print:w-full' : ''} ${isImpersonating ? 'pt-12' : ''}`}>
         {children}
       </main>
     </div>
