@@ -76,23 +76,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const isJcbEmail = firebaseUser.email === 'jcbbinger@gmail.com';
               
               // Force admin role if email matches
-              if (isAdminEmail && (data.role !== 'admin' || data.status !== 'approved')) {
-                const updatedProfile = { ...data, role: 'admin' as const, status: 'approved' as const };
-                try {
-                  await updateDoc(userRef, updatedProfile);
-                } catch (err) {
-                  console.error("Error forcing admin role:", err);
+              if (isAdminEmail) {
+                if (data.role !== 'admin' || data.status !== 'approved') {
+                  const updatedProfile = { ...data, role: 'admin' as const, status: 'approved' as const };
+                  updateDoc(userRef, updatedProfile).catch(err => console.error("Error forcing admin role:", err));
                   setRealProfile(updatedProfile);
+                } else {
+                  setRealProfile(data);
                 }
               } else if (isJcbEmail && data.role === 'admin') {
                 // Downgrade jcbbinger to student if it was admin
                 const updatedProfile = { ...data, role: 'student' as const };
-                try {
-                  await updateDoc(userRef, updatedProfile);
-                } catch (err) {
-                  console.error("Error downgrading jcbbinger:", err);
-                  setRealProfile(updatedProfile);
-                }
+                updateDoc(userRef, updatedProfile).catch(err => console.error("Error downgrading jcbbinger:", err));
+                setRealProfile(updatedProfile);
               } else {
                 setRealProfile(data);
               }
@@ -118,14 +114,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setLoading(false);
             } else {
               // Crear perfil si no existe
-              // Por defecto, todos los nuevos perfiles entran como 'student' y 'pending'
+              const isAdminEmail = firebaseUser.email === 'managerproapp@gmail.com';
               const newProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
                 displayName: firebaseUser.displayName || '',
                 photoURL: firebaseUser.photoURL || '',
-                role: 'student',
-                status: 'pending',
+                role: isAdminEmail ? 'admin' : 'student',
+                status: isAdminEmail ? 'approved' : 'pending',
               };
               try {
                 await setDoc(userRef, newProfile);
