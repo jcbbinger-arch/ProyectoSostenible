@@ -76,8 +76,7 @@ const AppContent = () => {
   }
 
   return (
-    <ErrorBoundary>
-      <HashRouter>
+    <HashRouter>
       {!user ? (
         <Login />
       ) : (profile?.role === 'admin' || profile?.role === 'assistant') && !profile?.projectId ? (
@@ -119,17 +118,18 @@ const AppContent = () => {
         </AppLayout>
       )}
     </HashRouter>
-    </ErrorBoundary>
   );
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <ProjectProvider>
-        <AppContent />
-      </ProjectProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ProjectProvider>
+          <AppContent />
+        </ProjectProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
