@@ -22,7 +22,7 @@ interface UserProfile {
   displayName: string;
   photoURL: string;
   role: 'admin' | 'student' | 'assistant';
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'suspended';
   projectId?: string;
   impersonatingUid?: string | null;
 }

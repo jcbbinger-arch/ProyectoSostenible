@@ -15,7 +15,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && (
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != 'suspended' && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
         request.auth.token.email == "managerproapp@gmail.com" ||
         request.auth.token.email == "jcbbinger@gmail.com"
@@ -23,7 +24,8 @@ service cloud.firestore {
     }
 
     function isAssistant() {
-      return isAuthenticated() && (
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != 'suspended' && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'assistant' ||
         isAdmin()
       );
@@ -52,7 +54,7 @@ service cloud.firestore {
              data.uid is string &&
              data.email is string &&
              data.role in ['admin', 'student', 'assistant'] &&
-             data.status in ['pending', 'approved'];
+             data.status in ['pending', 'approved', 'suspended'];
     }
 
     function isValidProject(data) {
@@ -74,11 +76,12 @@ service cloud.firestore {
         (isOwner(uid) && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status) ||
         isAdmin()
       );
+      allow delete: if isAdmin();
     }
 
     // Projects Collection
     match /projects/{projectId} {
-      allow read: if isApproved() && isProjectMember(projectId);
+      allow read: if isApproved();
       allow create: if isApproved() && isValidProject(request.resource.data);
       allow update: if isApproved() && isProjectMember(projectId) && isValidProject(request.resource.data);
       allow delete: if isAdmin();

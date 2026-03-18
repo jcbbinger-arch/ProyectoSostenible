@@ -19,7 +19,10 @@ import {
   ShieldAlert,
   LogOut,
   Info,
-  Copy
+  Copy,
+  PauseCircle,
+  PlayCircle,
+  RotateCcw
 } from 'lucide-react';
 
 interface UserProfile {
@@ -28,7 +31,7 @@ interface UserProfile {
   displayName: string;
   photoURL: string;
   role: 'admin' | 'student' | 'assistant';
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'suspended';
   projectId?: string;
 }
 
@@ -109,10 +112,34 @@ export const AdminDashboard: React.FC = () => {
 
   const rejectUser = async (uid: string) => {
     if (!isSuperAdmin) return;
+    if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente a este usuario?")) return;
     try {
       await deleteDoc(doc(db, 'users', uid));
     } catch (error) {
       console.error("Error rejecting user:", error);
+    }
+  };
+
+  const suspendUser = async (uid: string, currentStatus: string) => {
+    if (!isSuperAdmin) return;
+    try {
+      const newStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
+      await updateDoc(doc(db, 'users', uid), { status: newStatus });
+    } catch (error) {
+      console.error("Error toggling suspension:", error);
+    }
+  };
+
+  const resetUser = async (user: UserProfile) => {
+    if (!isSuperAdmin) return;
+    if (!window.confirm(`¿Estás seguro de que quieres reiniciar la cuenta de ${user.displayName}? Se eliminará su vinculación con cualquier proyecto y volverá a estado pendiente.`)) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { 
+        projectId: null,
+        status: 'pending'
+      });
+    } catch (error) {
+      console.error("Error resetting user:", error);
     }
   };
 
@@ -259,6 +286,8 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     {user.status === 'approved' ? (
                       <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+                    ) : user.status === 'suspended' ? (
+                      <PauseCircle className="w-5 h-5 text-amber-500 shrink-0" />
                     ) : (
                       <Clock className="w-5 h-5 text-amber-500 shrink-0" />
                     )}
@@ -305,23 +334,52 @@ export const AdminDashboard: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      <>
-                        <button
-                          onClick={() => impersonateUser(user.uid)}
-                          className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all"
-                        >
-                          <Ghost className="w-4 h-4" />
-                          Suplantar
-                        </button>
-                        {isSuperAdmin && user.uid !== realProfile?.uid && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex gap-2 w-full">
                           <button
-                            onClick={() => rejectUser(user.uid)}
-                            className="w-10 flex items-center justify-center bg-slate-50 text-slate-400 py-2 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all"
+                            onClick={() => impersonateUser(user.uid)}
+                            className="flex-1 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-2 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Ghost className="w-4 h-4" />
+                            Suplantar
                           </button>
+                          {isSuperAdmin && user.uid !== realProfile?.uid && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => suspendUser(user.uid, user.status)}
+                                title={user.status === 'suspended' ? "Activar cuenta" : "Suspender cuenta"}
+                                className={`w-10 flex items-center justify-center py-2 rounded-xl transition-all ${
+                                  user.status === 'suspended' 
+                                    ? 'bg-amber-100 text-amber-600 hover:bg-emerald-100 hover:text-emerald-600' 
+                                    : 'bg-slate-50 text-slate-400 hover:bg-amber-50 hover:text-amber-600'
+                                }`}
+                              >
+                                {user.status === 'suspended' ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+                              </button>
+                              <button
+                                onClick={() => resetUser(user)}
+                                title="Reiniciar cuenta (Quitar de proyecto)"
+                                className="w-10 flex items-center justify-center bg-slate-50 text-slate-400 py-2 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => rejectUser(user.uid)}
+                                title="Eliminar permanentemente"
+                                className="w-10 flex items-center justify-center bg-slate-50 text-slate-400 py-2 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {user.status === 'suspended' && (
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-lg">
+                            <PauseCircle className="w-3 h-3" />
+                            CUENTA SUSPENDIDA
+                          </div>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>

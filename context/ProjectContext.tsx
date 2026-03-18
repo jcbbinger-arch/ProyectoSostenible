@@ -127,11 +127,18 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [state, profile?.projectId]);
 
   const createProject = async (name: string) => {
-    if (!user) throw new Error("Must be logged in");
+    if (!user) throw new Error("Debes iniciar sesión");
     
     const projectId = doc(collection(db, 'projects')).id;
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     
+    const creatorMember = {
+      id: user.uid,
+      name: profile?.displayName || user.displayName || 'Coordinador',
+      role: 'Estudiante',
+      isCoordinator: true
+    };
+
     const newProject = {
       ...INITIAL_STATE,
       id: projectId,
@@ -139,6 +146,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       code,
       createdBy: user.uid,
       createdAt: new Date().toISOString(),
+      team: [creatorMember]
     };
 
     await setDoc(doc(db, 'projects', projectId), newProject);
@@ -148,17 +156,38 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const joinProject = async (code: string) => {
-    if (!user) throw new Error("Must be logged in");
+    if (!user) throw new Error("Debes iniciar sesión");
     
     const q = query(collection(db, 'projects'), where('code', '==', code.toUpperCase()));
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
-      throw new Error("Invalid project code");
+      throw new Error("Código de proyecto inválido");
     }
 
-    const projectId = querySnapshot.docs[0].id;
+    const projectDoc = querySnapshot.docs[0];
+    const projectId = projectDoc.id;
+    const projectData = projectDoc.data();
+    const team = projectData.team || [];
+    
+    if (team.length >= 5) {
+      throw new Error("Este equipo ya está completo (máximo 5 miembros)");
+    }
+
+    // 1. Actualizar el perfil del usuario primero para obtener permisos de miembro
     await updateDoc(doc(db, 'users', user.uid), { projectId });
+
+    // 2. Agregar al usuario a la lista del equipo en el documento del proyecto
+    const newMember = {
+      id: user.uid,
+      name: profile?.displayName || user.displayName || 'Nuevo Miembro',
+      role: 'Estudiante',
+      isCoordinator: team.length === 0 // El primero en unirse (o el creador) es coordinador si no hay nadie
+    };
+
+    await updateDoc(doc(db, 'projects', projectId), {
+      team: [...team, newMember]
+    });
   };
 
   const setCurrentUser = (id: string | null) => setState(prev => ({ ...prev, currentUser: id }));

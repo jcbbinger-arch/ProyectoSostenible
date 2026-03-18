@@ -22,6 +22,7 @@ import { TeacherEvaluation } from './pages/TeacherEvaluation';
 import { Login } from './pages/Login';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { WaitingRoom } from './components/WaitingRoom';
+import { SuspendedAccount } from './components/SuspendedAccount';
 import { ProjectAccess } from './components/ProjectAccess';
 import { Loader2, Ghost } from 'lucide-react';
 
@@ -79,6 +80,8 @@ const AppContent = () => {
         <Login />
       ) : (profile?.role === 'admin' || profile?.role === 'assistant') && !profile?.projectId ? (
         <AdminDashboard />
+      ) : profile?.status === 'suspended' ? (
+        <SuspendedAccount />
       ) : profile?.status === 'pending' ? (
         <WaitingRoom />
       ) : !profile?.projectId ? (
