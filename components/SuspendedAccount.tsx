@@ -27,7 +27,7 @@ export const SuspendedAccount: React.FC = () => {
           </p>
           <div className="pt-4 border-t border-slate-200">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email de contacto:</p>
-            <p className="font-mono text-slate-900">managerproapp@gmail.com</p>
+            <p className="font-mono text-slate-900">juan.codina@murciaeduca.es</p>
           </div>
         </div>
         

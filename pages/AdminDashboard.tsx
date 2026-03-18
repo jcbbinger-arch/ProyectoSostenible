@@ -54,7 +54,7 @@ export const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const isSuperAdmin = realProfile?.role === 'admin';
-  const ROOT_ADMIN_EMAILS = ['managerproapp@gmail.com', 'managerapp@gmail.com'];
+  const ROOT_ADMIN_EMAILS = ['juan.codina@murciaeduca.es'];
   const isRootAdmin = (email: string) => ROOT_ADMIN_EMAILS.includes(email.toLowerCase().trim());
 
   useEffect(() => {

@@ -73,8 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (docSnap.exists()) {
               const data = docSnap.data() as UserProfile;
               const email = firebaseUser.email?.toLowerCase().trim() || '';
-              const isAdminEmail = email === 'managerproapp@gmail.com' || email === 'managerapp@gmail.com';
-              const isJcbEmail = firebaseUser.email === 'jcbbinger@gmail.com';
+              const isAdminEmail = email === 'juan.codina@murciaeduca.es';
               
               // Force admin role if email matches
               if (isAdminEmail) {
@@ -85,11 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } else {
                   setRealProfile(data);
                 }
-              } else if (isJcbEmail && data.role === 'admin') {
-                // Downgrade jcbbinger to student if it was admin
-                const updatedProfile = { ...data, role: 'student' as const };
-                updateDoc(userRef, updatedProfile).catch(err => console.error("Error downgrading jcbbinger:", err));
-                setRealProfile(updatedProfile);
               } else {
                 setRealProfile(data);
               }
@@ -116,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
               // Crear perfil si no existe
               const email = firebaseUser.email?.toLowerCase().trim() || '';
-              const isAdminEmail = email === 'managerproapp@gmail.com' || email === 'managerapp@gmail.com';
+              const isAdminEmail = email === 'juan.codina@murciaeduca.es';
               const newProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || '',
