@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db, collection, query, where, onSnapshot, updateDoc, doc, getDocs, deleteDoc } from '../firebase';
+import { db, collection, query, where, onSnapshot, updateDoc, doc, getDocs, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { 
   Users, 
@@ -91,7 +91,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       await updateDoc(doc(db, 'users', uid), { status: 'approved' });
     } catch (error) {
-      console.error("Error approving user:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
   };
 
@@ -102,7 +102,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       await updateDoc(doc(db, 'users', uid), { role: newRole });
     } catch (error) {
-      console.error("Error changing role:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
   };
 
@@ -123,7 +123,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       await deleteDoc(doc(db, 'users', uid));
     } catch (error) {
-      console.error("Error rejecting user:", error);
+      handleFirestoreError(error, OperationType.DELETE, `users/${uid}`);
     }
   };
 
@@ -135,7 +135,7 @@ export const AdminDashboard: React.FC = () => {
       const newStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
       await updateDoc(doc(db, 'users', uid), { status: newStatus });
     } catch (error) {
-      console.error("Error toggling suspension:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
   };
 
@@ -149,7 +149,7 @@ export const AdminDashboard: React.FC = () => {
         status: 'pending'
       });
     } catch (error) {
-      console.error("Error resetting user:", error);
+      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
     }
   };
 

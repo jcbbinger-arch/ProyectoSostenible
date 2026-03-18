@@ -24,6 +24,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { WaitingRoom } from './components/WaitingRoom';
 import { SuspendedAccount } from './components/SuspendedAccount';
 import { ProjectAccess } from './components/ProjectAccess';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Loader2, Ghost } from 'lucide-react';
 
 // Layout wrapper to conditionally show Sidebar
@@ -75,7 +76,8 @@ const AppContent = () => {
   }
 
   return (
-    <HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
       {!user ? (
         <Login />
       ) : (profile?.role === 'admin' || profile?.role === 'assistant') && !profile?.projectId ? (
@@ -117,6 +119,7 @@ const AppContent = () => {
         </AppLayout>
       )}
     </HashRouter>
+    </ErrorBoundary>
   );
 };
 

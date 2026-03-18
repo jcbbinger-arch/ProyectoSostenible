@@ -73,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (docSnap.exists()) {
               const data = docSnap.data() as UserProfile;
               const isAdminEmail = firebaseUser.email === 'managerproapp@gmail.com';
+              const isJcbEmail = firebaseUser.email === 'jcbbinger@gmail.com';
               
               // Force admin role if email matches
               if (isAdminEmail && (data.role !== 'admin' || data.status !== 'approved')) {
@@ -81,6 +82,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   await updateDoc(userRef, updatedProfile);
                 } catch (err) {
                   console.error("Error forcing admin role:", err);
+                  setRealProfile(updatedProfile);
+                }
+              } else if (isJcbEmail && data.role === 'admin') {
+                // Downgrade jcbbinger to student if it was admin
+                const updatedProfile = { ...data, role: 'student' as const };
+                try {
+                  await updateDoc(userRef, updatedProfile);
+                } catch (err) {
+                  console.error("Error downgrading jcbbinger:", err);
                   setRealProfile(updatedProfile);
                 }
               } else {
