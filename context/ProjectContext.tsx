@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { ProjectState, Zone, Dish, TeamMember, MenuPrototype, Task6Roles, PeerReview, SeasonalProductContribution } from '../types';
-import { INITIAL_STATE } from '../constants';
+import { ProjectState, Zone, Dish, TeamMember, MenuPrototype, Task6Roles, PeerReview, SeasonalProductContribution, ChecklistStatus } from '../types';
+import { INITIAL_STATE, INITIAL_CHECKLIST } from '../constants';
 import { db, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs } from '../firebase';
 import { useAuth } from './AuthContext';
 
@@ -31,6 +31,7 @@ interface ProjectContextType {
   updateSeasonalProducts: (data: Partial<SeasonalProductContribution>) => void;
   updateInterimReport: (data: any) => void;
   savePeerReview: (review: PeerReview) => void;
+  updateChecklistItem: (id: string, status: ChecklistStatus) => void;
   resetProject: () => void;
 }
 
@@ -71,7 +72,8 @@ const sanitizeState = (loadedData: any): ProjectState => {
                 conclusions: { ...INITIAL_STATE.interimReport.analysis.conclusions, ...(loadedData.interimReport?.analysis?.conclusions || {}) }
             },
             development: { ...INITIAL_STATE.interimReport.development, ...(loadedData.interimReport?.development || {}) }
-        }
+        },
+        checklist: Array.isArray(loadedData.checklist) ? loadedData.checklist : INITIAL_CHECKLIST,
     };
 };
 
@@ -329,6 +331,15 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       return { ...prev, coEvaluations: [...prev.coEvaluations.filter(r => !(r.evaluatorId === review.evaluatorId && r.targetId === review.targetId)), review] };
     });
   };
+
+  const updateChecklistItem = (id: string, status: ChecklistStatus) => {
+    setState(prev => ({
+      ...prev,
+      checklist: prev.checklist.map(item => 
+        item.id === id ? { ...item, status } : item
+      )
+    }));
+  };
   
   const resetProject = () => {
     setState(INITIAL_STATE);
@@ -339,7 +350,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       state, loading, setCurrentUser, createProject, joinProject, claimTeamMember, joinTeamAsNewMember, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
-      updateSeasonalProducts, updateInterimReport, savePeerReview, resetProject 
+      updateSeasonalProducts, updateInterimReport, savePeerReview, updateChecklistItem, resetProject 
     }}>
       {children}
     </ProjectContext.Provider>

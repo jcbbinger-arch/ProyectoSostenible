@@ -3,10 +3,12 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2 } from 'lucide-react';
+import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2, Clock, Circle, ClipboardList } from 'lucide-react';
+import { ChecklistStatus } from '../types';
+import { db, doc, updateDoc } from '../firebase';
 
 export const Dashboard: React.FC = () => {
-  const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember } = useProject();
+  const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem } = useProject();
   const { profile, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -292,6 +294,75 @@ export const Dashboard: React.FC = () => {
                 </Link>
               </div>
           </div>
+      </div>
+
+      {/* Progress Checklist Section */}
+      <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm mb-12">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
+              <ClipboardList size={20} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Progreso del Proyecto</h3>
+              <p className="text-sm text-slate-500 font-medium">Marca los hitos conforme los vayáis completando.</p>
+            </div>
+          </div>
+          <div className="px-4 py-2 bg-slate-50 rounded-xl">
+            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              {state.checklist.filter(i => i.status === 'completed').length} / {state.checklist.length} Completados
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {state.checklist.map((item) => (
+            <div 
+              key={item.id}
+              className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between gap-4 ${
+                item.status === 'completed' 
+                  ? 'bg-emerald-50/30 border-emerald-100' 
+                  : item.status === 'in_progress'
+                    ? 'bg-blue-50/30 border-blue-100'
+                    : 'bg-white border-slate-50'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className={`text-sm font-bold leading-tight ${
+                  item.status === 'completed' ? 'text-emerald-900' : 'text-slate-700'
+                }`}>
+                  {item.label}
+                </span>
+                <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest shrink-0 ${
+                  item.category === 'group' ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                }`}>
+                  {item.category === 'group' ? 'Equipo' : 'Individual'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {(['not_started', 'in_progress', 'completed'] as ChecklistStatus[]).map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => updateChecklistItem(item.id, status)}
+                    className={`flex-1 flex items-center justify-center py-2 rounded-lg transition-all ${
+                      item.status === status
+                        ? status === 'completed'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : status === 'in_progress'
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-slate-400 text-white shadow-sm'
+                        : 'bg-slate-50 text-slate-300 hover:bg-slate-100'
+                    }`}
+                    title={status === 'completed' ? 'Completado' : status === 'in_progress' ? 'En progreso' : 'Sin empezar'}
+                  >
+                    {status === 'completed' ? <CheckCircle2 size={14} /> : status === 'in_progress' ? <Clock size={14} /> : <Circle size={14} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {state.currentUser && (

@@ -152,6 +152,16 @@ export interface InterimReport {
   bibliography: string;
 }
 
+export type ChecklistStatus = 'not_started' | 'in_progress' | 'completed';
+
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  status: ChecklistStatus;
+  category: 'individual' | 'group' | 'admin';
+  assignedToId?: string;
+}
+
 export interface ProjectState {
   // Firestore Metadata
   id?: string;
@@ -196,6 +206,9 @@ export interface ProjectState {
 
   // Interim Report
   interimReport: InterimReport;
+
+  // Progress Tracking
+  checklist: ChecklistItem[];
 }
 
 export interface ChatMessage {

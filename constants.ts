@@ -1,5 +1,5 @@
 
-import { Zone, MicroTask, ProjectState } from './types';
+import { Zone, MicroTask, ProjectState, ChecklistItem } from './types';
 
 export const ZONES: Zone[] = [
   {
@@ -85,6 +85,18 @@ export const INITIAL_MICRO_TASKS: MicroTask[] = [
     { id: 8, title: 'Auditoría Sostenible', description: 'Prácticas sostenibles viables en la zona.', deliverableHint: 'Informe sobre sostenibilidad.', assignedToId: null, content: '' },
     { id: 9, title: 'Benchmarking Innovación', description: 'Buscar ideas en otros lugares.', deliverableHint: 'Informe de 2 restaurantes inspiradores.', assignedToId: null, content: '' },
     { id: 10, title: 'Tendencias Visuales', description: 'Estética y Marketing.', deliverableHint: 'Moodboard o enlaces a 5 perfiles de Instagram.', assignedToId: null, content: '' },
+];
+
+export const INITIAL_CHECKLIST: ChecklistItem[] = [
+  { id: 't1_team', label: 'Tarea 1: Configuración del equipo', status: 'not_started', category: 'group' },
+  { id: 't1_zone', label: 'Tarea 1: Selección de zona y justificación', status: 'not_started', category: 'group' },
+  { id: 't2_research', label: 'Tarea 2: Investigación individual (Micro-tareas)', status: 'not_started', category: 'individual' },
+  { id: 't2_concept', label: 'Tarea 2: Definición del concepto del restaurante', status: 'not_started', category: 'group' },
+  { id: 't4_menu', label: 'Tarea 4: Diseño del menú y prototipo', status: 'not_started', category: 'group' },
+  { id: 't5_financials', label: 'Tarea 5: Escandallos y precios', status: 'not_started', category: 'group' },
+  { id: 't6_final', label: 'Tarea 6: Memoria final y roles', status: 'not_started', category: 'group' },
+  { id: 'interim_report', label: 'Informe Intermedio', status: 'not_started', category: 'group' },
+  { id: 'co_evaluation', label: 'Coevaluación del equipo', status: 'not_started', category: 'individual' },
 ];
 
 export const ALLERGENS = [
@@ -183,5 +195,6 @@ export const INITIAL_STATE: ProjectState = {
     conclusions: '',
     recommendations: '',
     bibliography: ''
-  }
+  },
+  checklist: INITIAL_CHECKLIST
 };
