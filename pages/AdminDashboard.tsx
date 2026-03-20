@@ -22,8 +22,11 @@ import {
   Copy,
   PauseCircle,
   PlayCircle,
-  RotateCcw
+  RotateCcw,
+  UserCircle,
+  Eye
 } from 'lucide-react';
+import { TeamMember } from '../types';
 
 interface UserProfile {
   uid: string;
@@ -33,6 +36,7 @@ interface UserProfile {
   role: 'admin' | 'student' | 'assistant';
   status: 'pending' | 'approved' | 'suspended';
   projectId?: string;
+  impersonatingUid?: string | null;
 }
 
 interface ProjectSummary {
@@ -43,6 +47,7 @@ interface ProjectSummary {
   schoolName: string;
   createdAt: string;
   createdBy: string;
+  team: TeamMember[];
 }
 
 export const AdminDashboard: React.FC = () => {
@@ -107,12 +112,24 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const enterProject = async (projectId: string) => {
+  const enterProjectAsMember = async (projectId: string, memberId: string) => {
     if (!realProfile?.uid) return;
     try {
-      await updateDoc(doc(db, 'users', realProfile.uid), { projectId });
+      // Si el memberId es un UID real (largo), intentamos suplantar al usuario real
+      const isRealUser = memberId.length >= 20;
+      
+      if (isRealUser) {
+        await impersonateUser(memberId);
+      } else {
+        // Si es un marcador de posición, entramos al proyecto y luego el admin 
+        // tendrá que elegir esa identidad en el Dashboard
+        await updateDoc(doc(db, 'users', realProfile.uid), { 
+          projectId,
+          impersonatingUid: null // Limpiamos suplantación previa si la había
+        });
+      }
     } catch (error) {
-      console.error("Error entering project:", error);
+      console.error("Error entering project as member:", error);
     }
   };
 
@@ -429,70 +446,93 @@ export const AdminDashboard: React.FC = () => {
       )}
 
         {activeTab === 'projects' && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Proyecto</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Equipo</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Código</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Creado</th>
-                  <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredProjects.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-slate-400 italic">
-                      No se encontraron proyectos.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredProjects.map((project) => (
-                    <tr key={project.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-slate-900">{project.name}</p>
-                        <p className="text-xs text-slate-500">{project.schoolName || 'Sin centro'}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold">
-                          {project.teamName || 'Sin nombre'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <code className="text-sm font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {filteredProjects.length === 0 ? (
+              <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                <LayoutDashboard className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500 font-medium">No se encontraron proyectos.</p>
+              </div>
+            ) : (
+              filteredProjects.map((project) => (
+                <div key={project.id} className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all flex flex-col">
+                  <div className="p-8 border-b border-slate-50 bg-slate-50/30">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">{project.name}</h3>
+                        <p className="text-sm text-slate-500 font-medium">{project.schoolName || 'Sin centro educativo'}</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <code className="text-xs font-mono font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg mb-2">
                           {project.code}
                         </code>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <Clock className="w-3 h-3" />
-                          {new Date(project.createdAt).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => enterProject(project.id)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 transition-colors" 
-                            title="Ver proyecto"
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Código de Equipo</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-6">
+                      <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-black uppercase tracking-wide">
+                        {project.teamName || 'Equipo sin nombre'}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-400 font-bold">
+                        <Clock size={14} />
+                        Creado el {new Date(project.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-8 flex-1">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                      <Users size={14} /> Miembros del Equipo ({project.team.length}/5)
+                    </h4>
+                    
+                    <div className="grid gap-3">
+                      {project.team.map((member) => {
+                        const isReal = member.id.length >= 20;
+                        return (
+                          <button
+                            key={member.id}
+                            onClick={() => enterProjectAsMember(project.id, member.id)}
+                            className="group flex items-center justify-between p-4 rounded-2xl border-2 border-slate-50 hover:border-emerald-500 hover:bg-emerald-50 transition-all"
                           >
-                            <ExternalLink className="w-5 h-5" />
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${isReal ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                                {member.name.charAt(0)}
+                              </div>
+                              <div className="text-left">
+                                <p className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{member.name}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                                  {isReal ? 'Usuario Vinculado' : 'Nombre Reservado'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-emerald-600 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                              <span className="text-[10px] font-black uppercase">Ver como él</span>
+                              <Eye size={16} />
+                            </div>
                           </button>
-                          <button 
-                            onClick={() => deleteProject(project.id)}
-                            className="p-2 text-slate-400 hover:text-red-600 transition-colors" 
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                        );
+                      })}
+                      {project.team.length === 0 && (
+                        <p className="text-sm text-slate-400 italic text-center py-4">No hay miembros registrados aún.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      ID: {project.id.substring(0, 8)}...
+                    </div>
+                    <button 
+                      onClick={() => deleteProject(project.id)}
+                      className="flex items-center gap-2 px-4 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all text-xs font-black uppercase tracking-widest"
+                    >
+                      <Trash2 size={14} />
+                      Eliminar Proyecto
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 

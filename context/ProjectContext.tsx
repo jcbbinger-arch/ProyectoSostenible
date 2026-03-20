@@ -11,6 +11,8 @@ interface ProjectContextType {
   setCurrentUser: (id: string | null) => void;
   createProject: (name: string) => Promise<string>;
   joinProject: (code: string) => Promise<void>;
+  claimTeamMember: (tempId: string) => Promise<void>;
+  joinTeamAsNewMember: (name: string) => Promise<void>;
   updateSchoolSettings: (name: string, year: string) => void;
   updateImage: (type: 'schoolLogo' | 'groupPhoto', base64: string | null) => void;
   updateTeamName: (name: string) => void;
@@ -167,27 +169,44 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     const projectDoc = querySnapshot.docs[0];
     const projectId = projectDoc.id;
-    const projectData = projectDoc.data();
-    const team = projectData.team || [];
     
-    if (team.length >= 5) {
-      throw new Error("Este equipo ya está completo (máximo 5 miembros)");
-    }
-
-    // 1. Actualizar el perfil del usuario primero para obtener permisos de miembro
+    // Solo actualizamos el perfil del usuario para vincularlo al proyecto
+    // La identificación con un miembro del equipo se hará en el Dashboard
     await updateDoc(doc(db, 'users', user.uid), { projectId });
+  };
 
-    // 2. Agregar al usuario a la lista del equipo en el documento del proyecto
-    const newMember = {
+  const claimTeamMember = async (tempId: string) => {
+    if (!user || !profile?.projectId) return;
+    
+    const team = [...state.team];
+    const index = team.findIndex(m => m.id === tempId);
+    if (index === -1) return;
+
+    const member = team[index];
+    team[index] = {
+      ...member,
       id: user.uid,
-      name: profile?.displayName || user.displayName || 'Nuevo Miembro',
-      role: 'Estudiante',
-      isCoordinator: team.length === 0 // El primero en unirse (o el creador) es coordinador si no hay nadie
+      // Mantenemos el nombre que ya estaba o usamos el del perfil si se prefiere
+      // Por consistencia con la petición del usuario, mantenemos el nombre del equipo pre-creado
     };
 
-    await updateDoc(doc(db, 'projects', projectId), {
-      team: [...team, newMember]
-    });
+    await updateDoc(doc(db, 'projects', profile.projectId), { team });
+    setState(prev => ({ ...prev, team, currentUser: user.uid }));
+  };
+
+  const joinTeamAsNewMember = async (name: string) => {
+    if (!user || !profile?.projectId) return;
+    if (state.team.length >= 5) throw new Error("Equipo completo");
+
+    const newMember: TeamMember = {
+      id: user.uid,
+      name: name,
+      isCoordinator: state.team.length === 0
+    };
+
+    const newTeam = [...state.team, newMember];
+    await updateDoc(doc(db, 'projects', profile.projectId), { team: newTeam });
+    setState(prev => ({ ...prev, team: newTeam, currentUser: user.uid }));
   };
 
   const setCurrentUser = (id: string | null) => setState(prev => ({ ...prev, currentUser: id }));
@@ -317,7 +336,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   return (
     <ProjectContext.Provider value={{ 
-      state, loading, setCurrentUser, createProject, joinProject, updateSchoolSettings, updateImage,
+      state, loading, setCurrentUser, createProject, joinProject, claimTeamMember, joinTeamAsNewMember, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
       updateSeasonalProducts, updateInterimReport, savePeerReview, resetProject 

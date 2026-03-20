@@ -1,19 +1,32 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap } from 'lucide-react';
+import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { state, setCurrentUser } = useProject();
-  const { profile } = useAuth();
+  const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember } = useProject();
+  const { profile, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [newMemberName, setNewMemberName] = useState(profile?.displayName || '');
+  const [isJoining, setIsJoining] = useState(false);
 
-  // LOGIC: If team exists but user is not identified, BLOCK access with a modal
-  const needsIdentity = state.team.length > 0 && !state.currentUser;
+  // LOGIC: Check if current user is already in the team
+  const isMember = state.team.some(m => m.id === user?.uid);
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'assistant';
+  const needsIdentity = !isMember && state.team.length > 0 && !isAdmin;
+
+  // Auto-set currentUser if already a member
+  useEffect(() => {
+    if (isMember && user?.uid && state.currentUser !== user.uid) {
+      setCurrentUser(user.uid);
+    }
+  }, [isMember, user?.uid, state.currentUser, setCurrentUser]);
+
+  const isPlaceholder = (id: string) => id.length < 20; // Firebase UIDs are 28 chars
 
   const handleBackup = () => {
     const dataStr = JSON.stringify(state, null, 2);
@@ -36,46 +49,105 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleIdentitySelect = (id: string) => {
-      setCurrentUser(id);
+  const handleIdentitySelect = async (id: string) => {
+      if (isPlaceholder(id)) {
+          setIsJoining(true);
+          try {
+            await claimTeamMember(id);
+          } finally {
+            setIsJoining(false);
+          }
+      } else {
+          setCurrentUser(id);
+      }
+  };
+
+  const handleJoinAsNew = async () => {
+      if (!newMemberName.trim()) return;
+      setIsJoining(true);
+      try {
+          await joinTeamAsNewMember(newMemberName);
+      } finally {
+          setIsJoining(false);
+      }
   };
 
   // --- RENDER: IDENTITY LOCK SCREEN ---
   if (needsIdentity) {
+      const placeholders = state.team.filter(m => isPlaceholder(m.id));
+      const canJoinNew = state.team.length < 5;
+
       return (
           <div className="fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-2xl w-full p-10 text-center animate-fade-in border border-white/20">
                   <div className="w-24 h-24 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-8 text-emerald-600 shadow-inner">
                       <User size={48} />
                   </div>
-                  <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">¿Quién eres hoy?</h2>
+                  <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">¡Bienvenido al Equipo!</h2>
                   <p className="text-slate-600 mb-10 text-lg font-medium">
                       Estás en el proyecto <strong className="text-emerald-600">{state.name || state.teamName}</strong>. <br/>
-                      Selecciona tu nombre para empezar a trabajar.
+                      Identifícate con uno de los nombres pre-creados o únete como nuevo miembro.
                   </p>
                   
-                  <div className="grid gap-4 max-h-96 overflow-y-auto text-left pr-2 custom-scrollbar">
-                      {state.team.map(member => (
-                          <button
-                              key={member.id}
-                              onClick={() => handleIdentitySelect(member.id)}
-                              className="group flex items-center justify-between p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 transition-all active:scale-[0.98]"
-                          >
-                              <div className="flex items-center gap-5">
-                                  <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center font-black text-slate-500 text-xl group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors">
-                                      {member.name.charAt(0)}
-                                  </div>
-                                  <div>
-                                      <span className="block font-black text-slate-900 text-xl">{member.name}</span>
-                                      {member.isCoordinator && (
-                                          <span className="inline-flex items-center gap-1 mt-1 text-[10px] uppercase font-black text-blue-600 bg-blue-100 px-2 py-0.5 rounded-lg">Coordinador</span>
-                                      )}
-                                  </div>
-                              </div>
-                              <LogIn className="text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-                          </button>
-                      ))}
+                  <div className="space-y-8">
+                    {placeholders.length > 0 && (
+                        <div>
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 text-left">Nombres disponibles en el equipo:</h3>
+                            <div className="grid gap-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                {placeholders.map(member => (
+                                    <button
+                                        key={member.id}
+                                        disabled={isJoining}
+                                        onClick={() => handleIdentitySelect(member.id)}
+                                        className="group flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 transition-all active:scale-[0.98] disabled:opacity-50"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-500 text-lg group-hover:bg-emerald-200 group-hover:text-emerald-800 transition-colors">
+                                                {member.name.charAt(0)}
+                                            </div>
+                                            <div className="text-left">
+                                                <span className="block font-black text-slate-900 text-lg">{member.name}</span>
+                                                <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wide">Este soy yo</span>
+                                            </div>
+                                        </div>
+                                        {isJoining ? <Loader2 className="animate-spin text-emerald-500" /> : <LogIn className="text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {canJoinNew && (
+                        <div className="pt-6 border-t border-slate-100">
+                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 text-left">O únete como nuevo miembro:</h3>
+                            <div className="flex gap-3">
+                                <input 
+                                    type="text"
+                                    value={newMemberName}
+                                    onChange={(e) => setNewMemberName(e.target.value)}
+                                    placeholder="Tu nombre..."
+                                    className="flex-1 px-5 py-4 rounded-2xl border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-slate-700"
+                                />
+                                <button
+                                    onClick={handleJoinAsNew}
+                                    disabled={isJoining || !newMemberName.trim()}
+                                    className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isJoining ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />}
+                                    Unirme
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!canJoinNew && placeholders.length === 0 && (
+                        <div className="p-6 bg-red-50 rounded-2xl border border-red-100 text-red-700">
+                            <p className="font-bold">El equipo está completo y todos los nombres están ocupados.</p>
+                            <p className="text-sm">Contacta con el coordinador de tu equipo si hay algún error.</p>
+                        </div>
+                    )}
                   </div>
+
                   <p className="mt-10 text-sm text-slate-400 font-bold uppercase tracking-widest">
                       Tu progreso se guardará automáticamente
                   </p>
@@ -236,6 +308,26 @@ export const Dashboard: React.FC = () => {
                   </div>
               </div>
               <div className="flex items-center gap-4">
+                  {isAdmin && (
+                    <div className="flex flex-col items-end mr-4 pr-4 border-r border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Modo Administrador: Ver como...</p>
+                      <div className="flex gap-2">
+                        {state.team.map(m => (
+                          <button
+                            key={m.id}
+                            onClick={() => setCurrentUser(m.id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              state.currentUser === m.id 
+                                ? 'bg-emerald-600 text-white' 
+                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            }`}
+                          >
+                            {m.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="text-right hidden lg:block">
                       <p className="text-sm font-bold text-slate-900">Tu trabajo se sincroniza en vivo</p>
                       <p className="text-xs text-slate-400 font-medium">Última actualización: hace un momento</p>
@@ -248,6 +340,30 @@ export const Dashboard: React.FC = () => {
                   </Link>
               </div>
           </div>
+      )}
+      {!state.currentUser && isAdmin && state.team.length > 0 && (
+        <div className="bg-amber-50 border border-amber-100 rounded-[2rem] p-8 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+              <User size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-900">Modo Administrador</p>
+              <p className="text-xs text-amber-700">Selecciona un perfil para ver el proyecto desde su perspectiva.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {state.team.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setCurrentUser(m.id)}
+                className="px-4 py-2 bg-white border border-amber-200 rounded-xl text-xs font-bold text-amber-700 hover:bg-amber-100 transition-all"
+              >
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
