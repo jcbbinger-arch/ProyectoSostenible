@@ -332,12 +332,25 @@ export const Dashboard: React.FC = () => {
                       <p className="text-sm font-bold text-slate-900">Tu trabajo se sincroniza en vivo</p>
                       <p className="text-xs text-slate-400 font-medium">Última actualización: hace un momento</p>
                   </div>
-                  <Link 
-                    to="/task-2"
-                    className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-3 active:scale-95"
-                  >
-                      Ir a la Tarea 2 <ArrowRight size={18} />
-                  </Link>
+                  <div className="flex flex-col gap-2">
+                    <Link 
+                      to="/task-2"
+                      className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-3 active:scale-95"
+                    >
+                        Ir a la Tarea 2 <ArrowRight size={18} />
+                    </Link>
+                    <button
+                      onClick={() => {
+                        if (window.confirm("¿Estás seguro de que quieres abandonar este proyecto? Perderás el acceso a menos que vuelvas a usar el código.")) {
+                          // We can use a context function if we had one, or just updateDoc here
+                          updateDoc(doc(db, 'users', user!.uid), { projectId: null });
+                        }
+                      }}
+                      className="text-[10px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-all"
+                    >
+                      Abandonar Proyecto Actual
+                    </button>
+                  </div>
               </div>
           </div>
       )}

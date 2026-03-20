@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db, collection, query, where, onSnapshot, updateDoc, doc, getDocs, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
+import { db, collection, query, where, onSnapshot, updateDoc, doc, getDocs, deleteDoc, handleFirestoreError, OperationType, logAction } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { 
   Users, 
@@ -24,7 +24,9 @@ import {
   PlayCircle,
   RotateCcw,
   UserCircle,
-  Eye
+  Eye,
+  History,
+  UserMinus
 } from 'lucide-react';
 import { TeamMember } from '../types';
 
@@ -50,11 +52,21 @@ interface ProjectSummary {
   team: TeamMember[];
 }
 
+interface AuditLog {
+  id: string;
+  action: string;
+  details: any;
+  userId: string;
+  userEmail: string;
+  timestamp: any;
+}
+
 export const AdminDashboard: React.FC = () => {
   const { profile, realProfile, impersonateUser, logout } = useAuth();
   const [pendingUsers, setPendingUsers] = useState<UserProfile[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [allProjects, setAllProjects] = useState<ProjectSummary[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [activeTab, setActiveTab] = useState<'users' | 'projects' | 'audit'>('users');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -83,10 +95,18 @@ export const AdminDashboard: React.FC = () => {
       setAllProjects(snapshot.docs.map(d => d.data() as ProjectSummary));
     });
 
+    // Listen to audit logs
+    const qAudit = query(collection(db, 'audit_logs'));
+    const unsubAudit = onSnapshot(qAudit, (snapshot) => {
+      const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as AuditLog));
+      setAuditLogs(logs.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds));
+    });
+
     return () => {
       unsubAllUsers();
       unsubPending();
       unsubProjects();
+      unsubAudit();
     };
   }, [realProfile]);
 
@@ -96,6 +116,7 @@ export const AdminDashboard: React.FC = () => {
     if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
       await updateDoc(doc(db, 'users', uid), { status: 'approved' });
+      logAction('USER_APPROVED', { uid, email: targetUser.email });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
@@ -107,6 +128,7 @@ export const AdminDashboard: React.FC = () => {
     if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
       await updateDoc(doc(db, 'users', uid), { role: newRole });
+      logAction('ROLE_CHANGED', { uid, email: targetUser.email, newRole });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
@@ -120,6 +142,7 @@ export const AdminDashboard: React.FC = () => {
       
       if (isRealUser) {
         await impersonateUser(memberId);
+        logAction('ADMIN_IMPERSONATION_START', { targetUid: memberId, projectId });
       } else {
         // Si es un marcador de posición, entramos al proyecto y luego el admin 
         // tendrá que elegir esa identidad en el Dashboard
@@ -127,6 +150,7 @@ export const AdminDashboard: React.FC = () => {
           projectId,
           impersonatingUid: null // Limpiamos suplantación previa si la había
         });
+        logAction('ADMIN_ENTER_PROJECT', { projectId, memberId });
       }
     } catch (error) {
       console.error("Error entering project as member:", error);
@@ -140,6 +164,7 @@ export const AdminDashboard: React.FC = () => {
     if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente a este usuario?")) return;
     try {
       await deleteDoc(doc(db, 'users', uid));
+      logAction('USER_DELETED', { uid, email: targetUser?.email });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `users/${uid}`);
     }
@@ -152,6 +177,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const newStatus = currentStatus === 'suspended' ? 'approved' : 'suspended';
       await updateDoc(doc(db, 'users', uid), { status: newStatus });
+      logAction('USER_STATUS_CHANGE', { uid, email: targetUser?.email, newStatus });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
@@ -175,6 +201,7 @@ export const AdminDashboard: React.FC = () => {
       
       // 2. Delete the project document
       await deleteDoc(doc(db, 'projects', projectId));
+      logAction('PROJECT_DELETED', { projectId });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `projects/${projectId}`);
     }
@@ -183,12 +210,13 @@ export const AdminDashboard: React.FC = () => {
   const resetUser = async (user: UserProfile) => {
     if (!isSuperAdmin) return;
     if (isRootAdmin(user.email)) return;
-    if (!window.confirm(`¿Estás seguro de que quieres reiniciar la cuenta de ${user.displayName}? Se eliminará su vinculación con cualquier proyecto y volverá a estado pendiente.`)) return;
+    if (!window.confirm(`¿Estás seguro de que quieres liberar a ${user.displayName} de su proyecto actual? Podrá crear o unirse a uno nuevo.`)) return;
     try {
       await updateDoc(doc(db, 'users', user.uid), { 
         projectId: null,
-        status: 'pending'
+        status: 'approved' // Ensure they stay approved but free
       });
+      logAction('USER_PROJECT_RESET', { uid: user.uid, email: user.email });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}`);
     }
@@ -414,10 +442,10 @@ export const AdminDashboard: React.FC = () => {
                               </button>
                               <button
                                 onClick={() => resetUser(user)}
-                                title="Reiniciar cuenta (Quitar de proyecto)"
-                                className="w-10 flex items-center justify-center bg-slate-50 text-slate-400 py-2 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all"
+                                title="Liberar para nuevo proyecto"
+                                className="w-10 flex items-center justify-center bg-blue-50 text-blue-600 py-2 rounded-xl hover:bg-blue-100 transition-all"
                               >
-                                <RotateCcw className="w-4 h-4" />
+                                <UserMinus className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => rejectUser(user.uid)}
@@ -537,9 +565,75 @@ export const AdminDashboard: React.FC = () => {
         )}
 
         {activeTab === 'audit' && (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-            <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
-            <p className="text-slate-500 font-medium">El registro de auditoría se implementará en la próxima fase.</p>
+          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Registro de Auditoría</h3>
+                <p className="text-sm text-slate-500 font-medium">Historial de acciones críticas realizadas en el sistema.</p>
+              </div>
+              <History className="text-slate-300 w-8 h-8" />
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha y Hora</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Acción</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Usuario</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Detalles</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-8 py-20 text-center text-slate-400 italic font-medium">
+                        No hay registros de auditoría disponibles.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
+                        <td className="px-8 py-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900">
+                              {log.timestamp?.toDate().toLocaleDateString()}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-bold">
+                              {log.timestamp?.toDate().toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-4">
+                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                            log.action.includes('DELETE') || log.action.includes('REJECT') 
+                              ? 'bg-red-50 text-red-600' 
+                              : log.action.includes('APPROVE') 
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : 'bg-blue-50 text-blue-600'
+                          }`}>
+                            {log.action.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="px-8 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-slate-900">{log.userEmail}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">ID: {log.userId.substring(0, 8)}...</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-4">
+                          <div className="max-w-xs overflow-hidden text-ellipsis">
+                            <pre className="text-[10px] font-mono text-slate-500 bg-slate-50 p-2 rounded-lg">
+                              {JSON.stringify(log.details, null, 2)}
+                            </pre>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>

@@ -92,6 +92,22 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
+// Audit Logger
+export async function logAction(action: string, details: any = {}) {
+  try {
+    const user = auth.currentUser;
+    await addDoc(collection(db, 'audit_logs'), {
+      action,
+      details,
+      userId: user?.uid || 'system',
+      userEmail: user?.email || 'system',
+      timestamp: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Error logging action:", error);
+  }
+}
+
 // Connection Test
 async function testConnection() {
   try {
