@@ -40,15 +40,15 @@ const RubricRow: React.FC<RubricRowProps> = ({
             
             <div className="ml-2 mr-2 mb-6">
                 <div className="flex justify-between text-xs font-bold uppercase text-gray-400 mb-2">
-                    <span className="text-red-500">Negativo (-0.5)</span>
+                    <span className="text-red-500">Negativo (-0.25)</span>
                     <span className="text-gray-500">Neutro (0)</span>
-                    <span className="text-green-500">Positivo (+0.5)</span>
+                    <span className="text-green-500">Positivo (+0.25)</span>
                 </div>
                 <input 
                     type="range" 
-                    min="-0.5" 
-                    max="0.5" 
-                    step="0.05" 
+                    min="-0.25" 
+                    max="0.25" 
+                    step="0.01" 
                     value={score}
                     onChange={(e) => onUpdate(category, 'score', parseFloat(e.target.value))}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -195,7 +195,7 @@ export const CoEvaluation: React.FC = () => {
                 <span className="text-3xl">⚖️</span> Coevaluación Diabólica
             </h2>
             <p className="text-gray-600 mt-2">
-                Evaluación confidencial del desempeño. Desliza las barras para ajustar la puntuación (Total: +/- 2 puntos).
+                Evaluación confidencial del desempeño. Desliza las barras para ajustar la puntuación (Total: +/- 1 punto).
             </p>
         </div>
 
@@ -311,88 +311,62 @@ export const CoEvaluation: React.FC = () => {
       {/* DISEÑO DE IMPRESIÓN OFICIAL (COHERENTE CON MEMORIA FINAL) */}
       <div className="hidden print:block w-full">
             
-            {/* === PORTADA (Full Page) === */}
-            <div className="print:h-[270mm] print:flex print:flex-col print:justify-between break-after-page mb-20 print:mb-0 relative border-b-2 border-transparent">
-                {/* Header Portada */}
-                <div className="border-b-[3px] border-black pb-6 mb-12">
-                    <div className="flex items-center gap-6">
-                         {state.schoolLogo ? (
-                            <img src={state.schoolLogo} alt="Logo" className="h-24 w-auto object-contain" />
-                        ) : (
-                            <div className="h-20 w-20 border-2 border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">Sin Logo</div>
+            {/* === CABECERA COMPACTA (Sustituye a Portada Completa) === */}
+            <div className="border-b-4 border-black pb-4 mb-6">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                        {state.schoolLogo && (
+                            <img src={state.schoolLogo} alt="Logo" className="h-16 w-auto object-contain" />
                         )}
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900 uppercase tracking-wide">{state.schoolName}</h2>
-                            <p className="text-lg text-gray-600 font-serif italic">Curso Académico {state.academicYear}</p>
+                            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">{state.schoolName}</h2>
+                            <p className="text-xs text-gray-600 italic">Curso {state.academicYear}</p>
                         </div>
                     </div>
-                </div>
-
-                {/* Central Title */}
-                <div className="text-center flex-grow flex flex-col justify-center items-center">
-                    <div className="border-4 border-black p-8 inline-block mb-8">
-                         <h1 className="text-4xl font-black text-black mb-2 uppercase tracking-tight">
-                            INFORME CONFIDENCIAL
-                        </h1>
-                        <h2 className="text-2xl font-bold text-gray-700 uppercase">
-                            DE COEVALUACIÓN (PRIVADO)
-                        </h2>
+                    <div className="text-right">
+                        <h1 className="text-xl font-black text-black uppercase tracking-tight">INFORME DE COEVALUACIÓN</h1>
+                        <p className="text-[10px] text-red-600 font-bold uppercase tracking-widest">CONFIDENCIAL - SOLO PROFESOR</p>
                     </div>
-                    
-                    <div className="mt-8 p-4 border-2 border-red-600 text-red-600 font-black uppercase tracking-widest rotate-[-5deg] inline-block">
-                        SOLO PARA EL PROFESOR
-                    </div>
-                    
-                    <p className="text-2xl text-gray-900 font-bold mb-2">{state.teamName}</p>
-                    <p className="text-xl text-gray-500 italic">"{state.concept.name || 'Proyecto Sin Nombre'}"</p>
                 </div>
-
-                {/* Footer Portada */}
-                <div className="mt-12">
-                    <div className="border-t-[3px] border-black pt-6">
-                         <div className="flex justify-between items-end">
-                             <div>
-                                 <p className="font-bold text-sm uppercase text-gray-500 mb-1">Evaluador (Alumno):</p>
-                                 <p className="text-2xl font-bold text-black">{me?.name || 'Usuario Desconocido'}</p>
-                             </div>
-                             <div className="text-right">
-                                 <p className="text-xs text-gray-500 mb-1">Fecha de Emisión:</p>
-                                 <p className="font-mono font-bold">{new Date().toLocaleDateString()}</p>
-                             </div>
-                         </div>
+                
+                <div className="mt-4 flex justify-between items-end bg-gray-50 p-3 border border-gray-200 rounded-lg">
+                    <div>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase mb-0.5">Proyecto / Equipo:</p>
+                        <p className="text-sm font-bold text-black">{state.teamName} - <span className="italic">"{state.concept.name || 'Proyecto Sin Nombre'}"</span></p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9px] font-bold text-gray-500 uppercase mb-0.5">Evaluador:</p>
+                        <p className="text-sm font-bold text-black">{me?.name}</p>
                     </div>
                 </div>
             </div>
 
-            {/* LISTADO DE EVALUACIONES */}
-            <div className="pt-8">
-                {teammates.map((mate, index) => {
+            {/* LISTADO DE EVALUACIONES COMPACTO */}
+            <div className="space-y-4">
+                {teammates.map((mate) => {
                     const review = state.coEvaluations.find(r => r.evaluatorId === state.currentUser && r.targetId === mate.id);
                     const hasReview = !!review;
                     const items = review?.items;
                     const totalScore = items ? (items.participation.score + items.responsibility.score + items.collaboration.score + items.contribution.score) : 0;
 
                     return (
-                        <div key={mate.id} className="break-inside-avoid mb-12 border border-black p-0">
+                        <div key={mate.id} className="break-inside-avoid border-2 border-black rounded-xl overflow-hidden shadow-sm">
                             
-                            {/* Header Ficha */}
-                            <div className="bg-gray-100 border-b border-black p-4 flex justify-between items-center print:bg-gray-100">
-                                <div>
-                                    <h3 className="font-bold text-lg uppercase text-black">Evaluado: {mate.name}</h3>
-                                    <p className="text-xs text-gray-500">Evaluación realizada por: {me?.name}</p>
-                                </div>
-                                <div className="text-right">
-                                     <span className="block text-[10px] uppercase font-bold text-gray-500">Impacto Total</span>
-                                     <span className={`text-xl font-black ${totalScore < 0 ? 'text-red-700' : 'text-black'}`}>
+                            {/* Header Ficha Compacto */}
+                            <div className="bg-black text-white p-2 px-4 flex justify-between items-center">
+                                <h3 className="font-black text-sm uppercase tracking-wider">EVALUADO: {mate.name}</h3>
+                                <div className="flex items-center gap-3">
+                                     <span className="text-[9px] uppercase font-bold text-gray-400">Impacto Total:</span>
+                                     <span className={`text-lg font-black ${totalScore < 0 ? 'text-red-400' : 'text-green-400'}`}>
                                         {totalScore > 0 ? '+' : ''}{totalScore.toFixed(2)}
                                      </span>
                                 </div>
                             </div>
 
-                            {/* Contenido Ficha */}
-                            <div className="p-6">
+                            {/* Comentarios Compactos */}
+                            <div className="p-3 bg-white">
                             {hasReview && items ? (
-                                <div className="grid grid-cols-1 gap-6">
+                                <div className="grid grid-cols-2 gap-3">
                                     {[
                                         { key: 'participation', label: '1. Participación' },
                                         { key: 'responsibility', label: '2. Responsabilidad' },
@@ -401,24 +375,24 @@ export const CoEvaluation: React.FC = () => {
                                     ].map((cat) => {
                                         const item = items[cat.key as keyof typeof items] as RubricItem;
                                         return (
-                                            <div key={cat.key} className="border-b border-gray-200 pb-4 last:border-0 last:pb-0">
-                                                <div className="flex justify-between items-baseline mb-2">
-                                                    <h4 className="font-bold text-sm uppercase text-gray-800">
+                                            <div key={cat.key} className="bg-gray-50 p-2 rounded border border-gray-100">
+                                                <div className="flex justify-between items-center mb-1 border-b border-gray-200 pb-1">
+                                                    <h4 className="font-bold text-[9px] uppercase text-gray-600">
                                                         {cat.label}
                                                     </h4>
-                                                    <div className="font-mono font-bold text-sm">
+                                                    <span className="font-mono font-bold text-[9px] text-gray-900">
                                                         {item.score > 0 ? '+' : ''}{item.score.toFixed(2)}
-                                                    </div>
+                                                    </span>
                                                 </div>
-                                                <div className="bg-gray-50 p-3 text-xs italic text-gray-700 border-l-2 border-black">
+                                                <p className="text-[10px] leading-tight text-gray-700 italic">
                                                     "{item.justification || 'Sin justificación'}"
-                                                </div>
+                                                </p>
                                             </div>
                                         );
                                     })}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 text-gray-400 italic">
+                                <div className="text-center py-4 text-gray-400 text-xs italic">
                                     -- Evaluación pendiente --
                                 </div>
                             )}
@@ -426,6 +400,13 @@ export const CoEvaluation: React.FC = () => {
                         </div>
                     );
                 })}
+            </div>
+            
+            {/* Footer de Página */}
+            <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center text-[8px] text-gray-400 uppercase font-bold tracking-widest">
+                <span>Murcia Sostenible - Gestor de Proyecto</span>
+                <span>Emitido el {new Date().toLocaleDateString()} a las {new Date().toLocaleTimeString()}</span>
+                <span>Página 1 de 1</span>
             </div>
       </div>
     </div>
