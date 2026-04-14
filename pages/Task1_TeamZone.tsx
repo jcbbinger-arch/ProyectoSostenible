@@ -196,9 +196,10 @@ export const Task1_TeamZone: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                         <select 
-                                            className="border border-gray-300 p-2.5 rounded-lg w-full max-w-[250px] bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
+                                            className={`border border-gray-300 p-2.5 rounded-lg w-full max-w-[250px] bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all ${!(state.team.find(m => m.id === state.currentUser)?.isCoordinator) ? 'bg-gray-50 cursor-not-allowed text-gray-400' : ''}`}
                                             value={task.assignedToId || ''}
                                             onChange={(e) => assignTask(task.id, e.target.value)}
+                                            disabled={!(state.team.find(m => m.id === state.currentUser)?.isCoordinator)}
                                         >
                                             <option value="">-- Seleccionar miembro --</option>
                                             {state.team.map(m => (

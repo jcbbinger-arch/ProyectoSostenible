@@ -99,17 +99,28 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (docSnap.exists()) {
         remoteUpdateInProgress.current = true;
         const data = docSnap.data();
-        setState(prev => ({
-          ...sanitizeState(data),
-          currentUser: prev.currentUser // Preservar el usuario actual local
-        }));
+        
+        setState(prev => {
+          const newState = sanitizeState(data);
+          // Auto-detect identity if not set
+          let nextCurrentUser = prev.currentUser;
+          if (!nextCurrentUser && user?.uid) {
+            const isMember = newState.team.some(m => m.id === user.uid);
+            if (isMember) nextCurrentUser = user.uid;
+          }
+          
+          return {
+            ...newState,
+            currentUser: nextCurrentUser
+          };
+        });
         remoteUpdateInProgress.current = false;
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [profile?.projectId]);
+  }, [profile?.projectId, user?.uid]);
 
   // Push local changes to Firestore (Debounced)
   useEffect(() => {
@@ -262,14 +273,30 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateSchoolSettings = (name: string, year: string) => setState(prev => ({ ...prev, schoolName: name, academicYear: year }));
   const updateImage = (type: 'schoolLogo' | 'groupPhoto', base64: string | null) => setState(prev => ({ ...prev, [type]: base64 }));
   const updateTeamName = (name: string) => setState(prev => ({ ...prev, teamName: name }));
-  const updateTeamMembers = (members: TeamMember[]) => setState(prev => ({ ...prev, team: members }));
+  const updateTeamMembers = (members: TeamMember[]) => {
+    const isCoordinator = state.team.find(m => m.id === state.currentUser)?.isCoordinator;
+    const noMembers = state.team.length === 0;
+    if (isCoordinator || noMembers) {
+      setState(prev => ({ ...prev, team: members }));
+    } else {
+      console.warn("Permission denied: Only coordinators can manage the team.");
+    }
+  };
   const selectZone = (zone: Zone) => setState(prev => ({ ...prev, selectedZone: zone }));
   const updateZoneJustification = (text: string) => setState(prev => ({ ...prev, zoneJustification: text }));
-  const assignTask = (taskId: number, memberId: string | null) => setState(prev => ({ ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, assignedToId: memberId } : t) } }));
+  const assignTask = (taskId: number, memberId: string | null) => {
+    const isCoordinator = state.team.find(m => m.id === state.currentUser)?.isCoordinator;
+    if (isCoordinator) {
+      setState(prev => ({ ...prev, task2: { ...prev.task2, tasks: prev.task2.tasks.map(t => t.id === taskId ? { ...t, assignedToId: memberId } : t) } }));
+    } else {
+      console.warn("Permission denied: Only coordinators can assign tasks.");
+    }
+  };
   const updateTaskContent = (taskId: number, content: string) => {
     setState(prev => {
       const task = prev.task2.tasks.find(t => t.id === taskId);
-      if (task && task.assignedToId !== prev.currentUser) {
+      const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
+      if (task && task.assignedToId !== prev.currentUser && !isCoordinator) {
         console.warn("Permission denied: You can only edit your assigned tasks.");
         return prev;
       }
@@ -282,7 +309,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const removeDish = (id: string) => {
     setState(prev => {
       const dish = prev.dishes.find(d => d.id === id);
-      if (dish && dish.author !== prev.currentUser) {
+      const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
+      if (dish && dish.author !== prev.currentUser && !isCoordinator) {
         console.warn("Permission denied: You can only remove your own dishes.");
         return prev;
       }
@@ -292,7 +320,8 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateDish = (dish: Dish) => {
     setState(prev => {
       const existing = prev.dishes.find(d => d.id === dish.id);
-      if (existing && existing.author !== prev.currentUser) {
+      const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
+      if (existing && existing.author !== prev.currentUser && !isCoordinator) {
         console.warn("Permission denied: You can only update your own dishes.");
         return prev;
       }
@@ -345,30 +374,34 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const updateSeasonalProducts = (data: Partial<SeasonalProductContribution>) => {
-      if (!state.currentUser) return;
-      setState(prev => {
-          const existing = prev.seasonalProducts.find(p => p.memberId === state.currentUser);
-          if (existing) {
-              return {
-                  ...prev,
-                  seasonalProducts: prev.seasonalProducts.map(p => 
-                      p.memberId === state.currentUser ? { ...p, ...data } : p
-                  )
-              };
-          } else {
-              return {
-                  ...prev,
-                  seasonalProducts: [...prev.seasonalProducts, {
-                      memberId: state.currentUser!,
-                      productList: '',
-                      sustainability: '',
-                      impactAnalysis: '',
-                      sources: [],
-                      ...data
-                  }]
-              };
-          }
-      });
+    if (!state.currentUser) return;
+    setState(prev => {
+      const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
+      // If coordinator, we allow editing any, but usually seasonal is per member.
+      // However, for consistency with the request, let's allow coordinator to edit if needed.
+      
+      const existing = prev.seasonalProducts.find(p => p.memberId === state.currentUser);
+      if (existing) {
+        return {
+          ...prev,
+          seasonalProducts: prev.seasonalProducts.map(p => 
+            p.memberId === state.currentUser ? { ...p, ...data } : p
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          seasonalProducts: [...prev.seasonalProducts, {
+            memberId: state.currentUser!,
+            productList: '',
+            sustainability: '',
+            impactAnalysis: '',
+            sources: [],
+            ...data
+          }]
+        };
+      }
+    });
   };
 
   const savePeerReview = (review: PeerReview) => {
