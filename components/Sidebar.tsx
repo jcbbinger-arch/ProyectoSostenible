@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { FileText, LayoutDashboard, DollarSign, Printer, Users, Microscope, UtensilsCrossed, Palette, Rocket, Settings, GraduationCap, Scale, Download, LogOut, Copy, Hash, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { FileText, LayoutDashboard, DollarSign, Printer, Users, Microscope, UtensilsCrossed, Palette, Rocket, Settings, GraduationCap, Scale, Download, LogOut, Copy, Hash, ShieldCheck, ArrowLeft, Edit2, Lock, Unlock } from 'lucide-react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { db, doc, updateDoc } from '../firebase';
@@ -30,10 +30,23 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon, label, colorClass }) => (
 );
 
 export const Sidebar: React.FC = () => {
-  const { state, resetProject } = useProject();
-  const { profile, realProfile, logout, impersonateUser } = useAuth();
+  const { state, resetProject, toggleTeamLock } = useProject();
+  const { profile, realProfile, logout, impersonateUser, updateProfile } = useAuth();
   const isAdmin = realProfile?.role === 'admin';
   const isAssistant = realProfile?.role === 'assistant';
+  const [isEditingName, setIsEditingName] = React.useState(false);
+  const [tempName, setTempName] = React.useState('');
+
+  const handleUpdateName = async () => {
+    if (!tempName.trim()) return;
+    await updateProfile({ displayName: tempName });
+    setIsEditingName(false);
+  };
+
+  const startEditing = () => {
+    setTempName(profile?.displayName || '');
+    setIsEditingName(true);
+  };
 
   const exitProject = async () => {
     if (!realProfile?.uid) return;
@@ -94,11 +107,38 @@ export const Sidebar: React.FC = () => {
         </Link>
         
         {profile && (
-          <div className="mt-4 flex items-center gap-3 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
-            <img src={profile.photoURL} alt="" className="w-8 h-8 rounded-full border border-green-200" />
-            <div className="overflow-hidden">
-              <p className="text-[11px] font-bold text-gray-900 truncate">{profile.displayName}</p>
-              <p className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{profile.role}</p>
+          <div className="mt-4 flex flex-col gap-2 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-3">
+              <img src={profile.photoURL} alt="" className="w-8 h-8 rounded-full border border-green-200" />
+              <div className="overflow-hidden flex-1">
+                {isEditingName ? (
+                  <div className="flex items-center gap-1">
+                    <input 
+                      type="text"
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      className="w-full text-[11px] font-bold text-gray-900 border border-green-200 rounded px-1 outline-none focus:ring-1 focus:ring-green-500"
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
+                    />
+                    <button onClick={handleUpdateName} className="text-green-600 hover:text-green-700">
+                      <ShieldCheck size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between group">
+                    <p className="text-[11px] font-bold text-gray-900 truncate">{profile.displayName}</p>
+                    <button 
+                      onClick={startEditing}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-green-600"
+                      title="Editar nombre"
+                    >
+                      <Edit2 size={10} />
+                    </button>
+                  </div>
+                )}
+                <p className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{profile.role}</p>
+              </div>
             </div>
           </div>
         )}
@@ -200,6 +240,12 @@ export const Sidebar: React.FC = () => {
                     <span className="font-bold truncate max-w-[80px] text-right">{state.teamName || '---'}</span>
                 </div>
                 <div className="flex justify-between">
+                    <span>Estado:</span>
+                    <span className={`font-bold ${state.isTeamClosed ? 'text-red-600' : 'text-green-600'}`}>
+                      {state.isTeamClosed ? 'Cerrado' : 'Abierto'}
+                    </span>
+                </div>
+                <div className="flex justify-between">
                     <span>Carta:</span>
                     <span>{state.dishes.length}/4</span>
                 </div>
@@ -210,6 +256,24 @@ export const Sidebar: React.FC = () => {
                     ></div>
                 </div>
             </div>
+            
+            {/* Lock/Unlock Team Button (Only for Coordinator) */}
+            {state.team.find(m => m.id === state.currentUser)?.isCoordinator && (
+              <button 
+                onClick={toggleTeamLock}
+                className={`w-full mt-3 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[10px] font-bold transition-all border ${
+                  state.isTeamClosed 
+                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
+                    : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                }`}
+              >
+                {state.isTeamClosed ? (
+                  <><Unlock size={12} /> Abrir Equipo</>
+                ) : (
+                  <><Lock size={12} /> Cerrar Equipo</>
+                )}
+              </button>
+            )}
         </div>
         
         <div className="grid grid-cols-2 gap-2 mb-3">

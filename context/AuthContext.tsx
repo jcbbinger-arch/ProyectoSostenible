@@ -35,6 +35,7 @@ interface AuthContextType {
   login: () => Promise<void>;
   loginWithRedirect: () => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   impersonateUser: (uid: string | null) => Promise<void>;
 }
 
@@ -194,9 +195,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Logout Error:", error);
     }
   };
+  
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    if (!realProfile?.uid) return;
+    try {
+      await updateDoc(doc(db, 'users', realProfile.uid), data);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, profile, realProfile, loading, login, loginWithRedirect, logout, impersonateUser }}>
+    <AuthContext.Provider value={{ user, profile, realProfile, loading, login, loginWithRedirect, logout, updateProfile, impersonateUser }}>
       {children}
     </AuthContext.Provider>
   );

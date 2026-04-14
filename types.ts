@@ -199,6 +199,7 @@ export interface ProjectState {
   menuPrototype: MenuPrototype;
   task6: Task6Roles;
   team: TeamMember[];
+  isTeamClosed?: boolean;
   seasonalProducts: SeasonalProductContribution[];
   
   // New: Store all reviews

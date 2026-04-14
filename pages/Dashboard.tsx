@@ -68,6 +68,10 @@ export const Dashboard: React.FC = () => {
 
   const handleJoinAsNew = async () => {
       if (!newMemberName.trim()) return;
+      if (state.isTeamClosed) {
+          alert("El equipo está cerrado y no se pueden añadir más miembros.");
+          return;
+      }
       setIsJoining(true);
       try {
           await joinTeamAsNewMember(newMemberName);
@@ -138,7 +142,7 @@ export const Dashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {canJoinNew && (
+                    {canJoinNew && !state.isTeamClosed && (
                         <div className="pt-6 border-t border-slate-100">
                             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 text-left">O únete como nuevo miembro:</h3>
                             <div className="flex gap-3">

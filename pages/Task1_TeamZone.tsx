@@ -26,6 +26,10 @@ export const Task1_TeamZone: React.FC = () => {
   const handleAddMember = () => {
     if (!newMemberName.trim()) return;
     if (state.team.length >= 5) return;
+    if (state.isTeamClosed) {
+        alert("El equipo está cerrado y no se pueden añadir más miembros.");
+        return;
+    }
     
     const newMember: TeamMember = {
         id: generateId(),
@@ -302,19 +306,23 @@ export const Task1_TeamZone: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Miembros (3-5 Personas)</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Miembros (3-5 Personas) 
+                        {state.isTeamClosed && <span className="ml-2 text-red-600 text-xs font-black uppercase tracking-widest">[EQUIPO CERRADO]</span>}
+                    </label>
                     <div className="flex gap-2 mb-4">
                         <input 
                             type="text" 
                             value={newMemberName}
                             onChange={(e) => setNewMemberName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddMember()}
-                            placeholder="Nombre del alumno..."
-                            className="flex-1 p-2 border border-gray-300 rounded-lg"
+                            placeholder={state.isTeamClosed ? "Equipo cerrado..." : "Nombre del alumno..."}
+                            disabled={state.isTeamClosed}
+                            className="flex-1 p-2 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
                         <button 
                             onClick={handleAddMember}
-                            disabled={state.team.length >= 5}
+                            disabled={state.team.length >= 5 || state.isTeamClosed}
                             className="bg-green-600 text-white px-4 rounded-lg hover:bg-green-700 disabled:opacity-50"
                         >
                             <UserPlus size={20} />

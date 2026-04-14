@@ -32,6 +32,7 @@ interface ProjectContextType {
   updateInterimReport: (data: any) => void;
   savePeerReview: (review: PeerReview) => void;
   updateChecklistItem: (id: string, status: ChecklistStatus) => void;
+  toggleTeamLock: () => void;
   resetProject: () => void;
 }
 
@@ -53,6 +54,7 @@ const sanitizeState = (loadedData: any): ProjectState => {
         missions: { ...INITIAL_STATE.missions, ...(loadedData.missions || {}) },
         task2: { ...INITIAL_STATE.task2, ...(loadedData.task2 || {}) },
         task6: safeTask6,
+        isTeamClosed: loadedData.isTeamClosed || false,
         menuPrototype: { ...INITIAL_STATE.menuPrototype, ...(loadedData.menuPrototype || {}) },
         dishes: Array.isArray(loadedData.dishes) ? loadedData.dishes : [],
         team: Array.isArray(loadedData.team) ? loadedData.team : [],
@@ -419,6 +421,17 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       )
     }));
   };
+
+  const toggleTeamLock = () => {
+    setState(prev => {
+      const isCoordinator = prev.team.find(m => m.id === prev.currentUser)?.isCoordinator;
+      if (!isCoordinator) {
+          alert("Solo el coordinador puede cerrar o abrir el equipo.");
+          return prev;
+      }
+      return { ...prev, isTeamClosed: !prev.isTeamClosed };
+    });
+  };
   
   const resetProject = () => {
     setState(INITIAL_STATE);
@@ -429,7 +442,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
       state, loading, setCurrentUser, createProject, joinProject, claimTeamMember, joinTeamAsNewMember, updateSchoolSettings, updateImage,
       updateTeamName, updateTeamMembers, selectZone, updateZoneJustification, assignTask, updateTaskContent,
       updateConcept, updateMission, addDish, removeDish, updateDish, updateMenuPrototype, updateTask6Roles,
-      updateSeasonalProducts, updateInterimReport, savePeerReview, updateChecklistItem, resetProject 
+      updateSeasonalProducts, updateInterimReport, savePeerReview, updateChecklistItem, toggleTeamLock, resetProject 
     }}>
       {children}
     </ProjectContext.Provider>

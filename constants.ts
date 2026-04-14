@@ -153,6 +153,7 @@ export const INITIAL_STATE: ProjectState = {
     editorIds: []
   },
   team: [],
+  isTeamClosed: false,
   seasonalProducts: [],
   coEvaluations: [],
   interimReport: {
