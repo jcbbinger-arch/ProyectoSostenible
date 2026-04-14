@@ -87,8 +87,8 @@ export const Task2_Analysis: React.FC = () => {
                 const isExpanded = expandedTask === task.id;
                 const isCompleted = task.content.length > 20;
                 
-                // LOCK LOGIC: Only the assigned member can edit
-                const isLocked = task.assignedToId !== state.currentUser; 
+                // LOCK LOGIC: Only the assigned member can edit. If not assigned or no user, it's locked.
+                const isLocked = !state.currentUser || task.assignedToId !== state.currentUser; 
 
                 return (
                     <div key={task.id} className={`bg-white border rounded-xl transition-all ${isExpanded ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'}`}>

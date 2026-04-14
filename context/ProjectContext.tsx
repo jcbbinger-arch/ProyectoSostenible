@@ -98,7 +98,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     const unsubscribe = onSnapshot(projectRef, (docSnap) => {
       if (docSnap.exists()) {
         remoteUpdateInProgress.current = true;
-        setState(sanitizeState(docSnap.data()));
+        const data = docSnap.data();
+        setState(prev => ({
+          ...sanitizeState(data),
+          currentUser: prev.currentUser // Preservar el usuario actual local
+        }));
         remoteUpdateInProgress.current = false;
       }
       setLoading(false);
@@ -188,12 +192,54 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
     team[index] = {
       ...member,
       id: user.uid,
-      // Mantenemos el nombre que ya estaba o usamos el del perfil si se prefiere
-      // Por consistencia con la petición del usuario, mantenemos el nombre del equipo pre-creado
     };
 
-    await updateDoc(doc(db, 'projects', profile.projectId), { team });
-    setState(prev => ({ ...prev, team, currentUser: user.uid }));
+    // Actualizar todas las referencias al ID temporal en el estado del proyecto
+    const updatedTask2 = {
+      ...state.task2,
+      tasks: state.task2.tasks.map(t => t.assignedToId === tempId ? { ...t, assignedToId: user.uid } : t)
+    };
+    
+    const updatedDishes = state.dishes.map(d => d.author === tempId ? { ...d, author: user.uid } : d);
+    
+    const updatedTask6 = {
+      ...state.task6,
+      designerIds: state.task6.designerIds.map(id => id === tempId ? user.uid : id),
+      artisanIds: state.task6.artisanIds.map(id => id === tempId ? user.uid : id),
+      editorIds: state.task6.editorIds.map(id => id === tempId ? user.uid : id),
+    };
+
+    const updatedCoEvaluations = state.coEvaluations.map(r => ({
+      ...r,
+      evaluatorId: r.evaluatorId === tempId ? user.uid : r.evaluatorId,
+      targetId: r.targetId === tempId ? user.uid : r.targetId,
+    }));
+
+    const updatedSeasonalProducts = state.seasonalProducts.map(p => p.memberId === tempId ? { ...p, memberId: user.uid } : p);
+    
+    const updatedChecklist = state.checklist.map(i => i.assignedToId === tempId ? { ...i, assignedToId: user.uid } : i);
+
+    await updateDoc(doc(db, 'projects', profile.projectId), { 
+      team,
+      task2: updatedTask2,
+      dishes: updatedDishes,
+      task6: updatedTask6,
+      coEvaluations: updatedCoEvaluations,
+      seasonalProducts: updatedSeasonalProducts,
+      checklist: updatedChecklist
+    });
+    
+    setState(prev => ({ 
+      ...prev, 
+      team, 
+      task2: updatedTask2,
+      dishes: updatedDishes,
+      task6: updatedTask6,
+      coEvaluations: updatedCoEvaluations,
+      seasonalProducts: updatedSeasonalProducts,
+      checklist: updatedChecklist,
+      currentUser: user.uid 
+    }));
   };
 
   const joinTeamAsNewMember = async (name: string) => {
