@@ -3,18 +3,20 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2, Clock, Circle, ClipboardList } from 'lucide-react';
+import { ArrowRight, Upload, FileText, User, LogIn, Download, Hash, Copy, CheckCircle2, GraduationCap, UserPlus, Loader2, Clock, Circle, ClipboardList, Lock, Unlock, Edit2, Save } from 'lucide-react';
 import { ChecklistStatus } from '../types';
 import { db, doc, updateDoc } from '../firebase';
 
 export const Dashboard: React.FC = () => {
-  const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem } = useProject();
+  const { state, setCurrentUser, claimTeamMember, joinTeamAsNewMember, updateChecklistItem, updateTeamMembers } = useProject();
   const { profile, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [newMemberName, setNewMemberName] = useState(profile?.displayName || '');
   const [isJoining, setIsJoining] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
 
   // LOGIC: Check if current user is already in the team
   const isMember = state.team.some(m => m.id === user?.uid);
@@ -72,6 +74,23 @@ export const Dashboard: React.FC = () => {
       } finally {
           setIsJoining(false);
       }
+  };
+
+  const handleUpdateName = () => {
+    if (!tempName.trim() || !state.currentUser) return;
+    const updatedTeam = state.team.map(m => 
+      m.id === state.currentUser ? { ...m, name: tempName } : m
+    );
+    updateTeamMembers(updatedTeam);
+    setIsEditingName(false);
+  };
+
+  const startEditing = () => {
+    const currentMember = state.team.find(m => m.id === state.currentUser);
+    if (currentMember) {
+      setTempName(currentMember.name);
+      setIsEditingName(true);
+    }
   };
 
   // --- RENDER: IDENTITY LOCK SCREEN ---
@@ -373,9 +392,48 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <div>
                       <p className="text-xs text-emerald-600 font-black uppercase tracking-widest mb-1">Sesión Activa</p>
-                      <p className="text-2xl font-black text-slate-900">
-                          Hola, {state.team.find(m => m.id === state.currentUser)?.name}
-                      </p>
+                      <div className="flex items-center gap-3">
+                          {isEditingName ? (
+                              <div className="flex items-center gap-2">
+                                  <input 
+                                      type="text"
+                                      value={tempName}
+                                      onChange={(e) => setTempName(e.target.value)}
+                                      className="bg-slate-50 border border-emerald-200 rounded-lg px-3 py-1 text-lg font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                                      autoFocus
+                                  />
+                                  <button 
+                                      onClick={handleUpdateName}
+                                      className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
+                                      title="Guardar nombre"
+                                  >
+                                      <Save size={18} />
+                                  </button>
+                                  <button 
+                                      onClick={() => setIsEditingName(false)}
+                                      className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all"
+                                      title="Cancelar"
+                                  >
+                                      <Unlock size={18} className="text-emerald-500" />
+                                  </button>
+                              </div>
+                          ) : (
+                              <div className="flex items-center gap-3">
+                                  <p className="text-2xl font-black text-slate-900">
+                                      Hola, {state.team.find(m => m.id === state.currentUser)?.name}
+                                  </p>
+                                  <button 
+                                      onClick={startEditing}
+                                      className="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-50 transition-all"
+                                      title="Cambiar mi nombre"
+                                  >
+                                      <Lock size={16} className="text-red-500 group-hover:hidden" />
+                                      <Unlock size={16} className="text-emerald-500 hidden group-hover:block" />
+                                      <Edit2 size={14} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                                  </button>
+                              </div>
+                          )}
+                      </div>
                   </div>
               </div>
               <div className="flex items-center gap-4">
