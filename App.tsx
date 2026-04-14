@@ -25,6 +25,7 @@ import { WaitingRoom } from './components/WaitingRoom';
 import { SuspendedAccount } from './components/SuspendedAccount';
 import { ProjectAccess } from './components/ProjectAccess';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { TeamLockGuard } from './components/TeamLockGuard';
 import { Loader2, Ghost } from 'lucide-react';
 
 // Layout wrapper to conditionally show Sidebar
@@ -98,25 +99,27 @@ const AppContent = () => {
         </div>
       ) : (
         <AppLayout>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/academic-guide" element={<AcademicGuide />} />
-            <Route path="/task-1" element={<Task1_TeamZone />} />
-            <Route path="/setup" element={<ProjectSetup />} />
-            <Route path="/sync" element={<TeamSync />} />
-            <Route path="/task-2" element={<Task2_Analysis />} />
-            <Route path="/zone" element={<Navigate to="/task-1" replace />} />
-            <Route path="/concept" element={<ConceptDefinition />} />
-            <Route path="/menu" element={<MenuDesign />} />
-            <Route path="/task-4" element={<Task4_MenuPrototype />} />
-            <Route path="/financials" element={<Task5_Financials />} />
-            <Route path="/task-6" element={<Task6_FinalAssembly />} />
-            <Route path="/co-eval" element={<CoEvaluation />} />
-            <Route path="/teacher-eval" element={<TeacherEvaluation />} />
-            <Route path="/memory" element={<FinalMemory />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          <TeamLockGuard>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/academic-guide" element={<AcademicGuide />} />
+              <Route path="/task-1" element={<Task1_TeamZone />} />
+              <Route path="/setup" element={<ProjectSetup />} />
+              <Route path="/sync" element={<TeamSync />} />
+              <Route path="/task-2" element={<Task2_Analysis />} />
+              <Route path="/zone" element={<Navigate to="/task-1" replace />} />
+              <Route path="/concept" element={<ConceptDefinition />} />
+              <Route path="/menu" element={<MenuDesign />} />
+              <Route path="/task-4" element={<Task4_MenuPrototype />} />
+              <Route path="/financials" element={<Task5_Financials />} />
+              <Route path="/task-6" element={<Task6_FinalAssembly />} />
+              <Route path="/co-eval" element={<CoEvaluation />} />
+              <Route path="/teacher-eval" element={<TeacherEvaluation />} />
+              <Route path="/memory" element={<FinalMemory />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </TeamLockGuard>
         </AppLayout>
       )}
     </HashRouter>

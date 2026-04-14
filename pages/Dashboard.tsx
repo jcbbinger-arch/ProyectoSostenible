@@ -198,6 +198,26 @@ export const Dashboard: React.FC = () => {
         </p>
 
         {/* Grading System Explanation */}
+        {!state.isTeamClosed && !isAdmin && (
+          <div className="max-w-4xl mx-auto bg-amber-50 border-2 border-amber-200 rounded-[2rem] p-8 text-left shadow-sm mb-12 animate-pulse">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+                <Lock size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-amber-900 tracking-tight">Fase de Constitución Activa</h3>
+                <p className="text-sm text-amber-700 font-medium">El equipo aún está abierto. Debéis terminar de incorporar a todos los miembros antes de comenzar las tareas.</p>
+              </div>
+            </div>
+            <Link 
+              to="/task-1"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all"
+            >
+              Ir a Tarea 1 y Cerrar Equipo <ArrowRight size={18} />
+            </Link>
+          </div>
+        )}
+
         <div className="max-w-4xl mx-auto bg-white border-2 border-slate-100 rounded-[2rem] p-8 text-left shadow-sm mb-12">
             <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
                 <GraduationCap className="text-emerald-600" size={32} />

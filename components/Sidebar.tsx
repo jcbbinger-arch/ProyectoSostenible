@@ -11,21 +11,26 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   colorClass: string;
+  disabled?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon, label, colorClass }) => (
+const NavItem: React.FC<NavItemProps> = ({ to, icon, label, colorClass, disabled }) => (
   <NavLink
-    to={to}
+    to={disabled ? '#' : to}
+    onClick={(e) => disabled && e.preventDefault()}
     className={({ isActive }) =>
       `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-1 ${
-        isActive
-          ? colorClass
-          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+        disabled 
+          ? 'opacity-40 cursor-not-allowed grayscale' 
+          : isActive
+            ? colorClass
+            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
       }`
     }
   >
     {icon}
-    {label}
+    <span className="flex-1">{label}</span>
+    {disabled && <Lock size={12} className="text-gray-400" />}
   </NavLink>
 );
 
@@ -194,6 +199,7 @@ export const Sidebar: React.FC = () => {
                         icon={item.icon}
                         label={item.label}
                         colorClass="bg-blue-50 text-blue-700 border border-blue-100"
+                        disabled={item.to === '/setup' && !state.isTeamClosed && !isAdmin && !isAssistant}
                     />
                 ))}
             </div>
@@ -213,6 +219,7 @@ export const Sidebar: React.FC = () => {
                         icon={item.icon}
                         label={item.label}
                         colorClass="bg-green-50 text-green-700 border border-green-100"
+                        disabled={!state.isTeamClosed && !isAdmin && !isAssistant}
                     />
                 ))}
             </div>

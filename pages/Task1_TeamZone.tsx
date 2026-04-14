@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ZONES } from '../constants';
 import { useProject } from '../context/ProjectContext';
 import { TeamMember } from '../types';
-import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon, Users } from 'lucide-react';
+import { CheckCircle, FileText, UserPlus, Trash, Printer, Eye, EyeOff, Upload, Image as ImageIcon, Users, Lock, Unlock } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -15,7 +15,8 @@ export const Task1_TeamZone: React.FC = () => {
     updateZoneJustification,
     updateSchoolSettings,
     updateImage,
-    assignTask
+    assignTask,
+    toggleTeamLock
   } = useProject();
   const [activeTab, setActiveTab] = useState<'instructions' | 'development' | 'distribution' | 'deliverable'>('instructions');
   const [newMemberName, setNewMemberName] = useState('');
@@ -271,6 +272,49 @@ export const Task1_TeamZone: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Team Lock Button in Task 1 */}
+                {state.team.find(m => m.id === state.currentUser)?.isCoordinator && (
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                        <div className={`p-6 rounded-2xl border-2 flex flex-col md:flex-row items-center justify-between gap-6 ${
+                            state.isTeamClosed ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'
+                        }`}>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                    state.isTeamClosed ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                                }`}>
+                                    {state.isTeamClosed ? <Lock size={24} /> : <Unlock size={24} />}
+                                </div>
+                                <div>
+                                    <h4 className={`font-black ${state.isTeamClosed ? 'text-red-900' : 'text-green-900'}`}>
+                                        {state.isTeamClosed ? 'Equipo Cerrado' : 'Equipo Abierto'}
+                                    </h4>
+                                    <p className={`text-sm ${state.isTeamClosed ? 'text-red-700' : 'text-green-700'}`}>
+                                        {state.isTeamClosed 
+                                            ? 'El equipo está sellado. Ya podéis comenzar con el reparto de tareas y la ejecución.' 
+                                            : 'Cuando todos los miembros se hayan unido, cierra el equipo para desbloquear las siguientes tareas.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    if (!state.isTeamClosed && state.team.length < 3) {
+                                        alert("Se recomienda un mínimo de 3 miembros para cerrar el equipo.");
+                                    }
+                                    toggleTeamLock();
+                                }}
+                                className={`px-8 py-3 rounded-xl font-black transition-all shadow-lg flex items-center gap-2 ${
+                                    state.isTeamClosed 
+                                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-600/20' 
+                                        : 'bg-green-600 text-white hover:bg-green-700 shadow-green-600/20'
+                                }`}
+                            >
+                                {state.isTeamClosed ? <Unlock size={20} /> : <Lock size={20} />}
+                                {state.isTeamClosed ? 'Abrir Equipo' : 'Cerrar Equipo y Comenzar'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </section>
 
             {/* Step 1: Team */}
