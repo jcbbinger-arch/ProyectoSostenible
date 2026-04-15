@@ -71,6 +71,9 @@ export const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const isSuperAdmin = realProfile?.role === 'admin';
+  const isAssistant = realProfile?.role === 'assistant';
+  const canManageUsers = isSuperAdmin || isAssistant;
+
   const ROOT_ADMIN_EMAILS = ['juan.codina@murciaeduca.es'];
   const isRootAdmin = (email: string) => ROOT_ADMIN_EMAILS.includes(email.toLowerCase().trim());
 
@@ -111,24 +114,38 @@ export const AdminDashboard: React.FC = () => {
   }, [realProfile]);
 
   const approveUser = async (uid: string) => {
-    if (!isSuperAdmin) return;
+    if (!canManageUsers) return;
     const targetUser = allUsers.find(u => u.uid === uid);
     if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
       await updateDoc(doc(db, 'users', uid), { status: 'approved' });
-      logAction('USER_APPROVED', { uid, email: targetUser.email });
+      logAction('USER_APPROVED', { uid, email: targetUser?.email });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
   };
 
   const handleRoleChange = async (uid: string, newRole: 'admin' | 'student' | 'assistant') => {
-    if (!isSuperAdmin) return;
+    if (!canManageUsers) return;
+    
+    // Only admins can promote to admin
+    if (newRole === 'admin' && !isSuperAdmin) {
+        alert("Solo los administradores pueden asignar el rol de ADMIN.");
+        return;
+    }
+
     const targetUser = allUsers.find(u => u.uid === uid);
     if (targetUser && isRootAdmin(targetUser.email)) return;
+    
     try {
-      await updateDoc(doc(db, 'users', uid), { role: newRole });
-      logAction('ROLE_CHANGED', { uid, email: targetUser.email, newRole });
+      const updates: any = { role: newRole };
+      // Auto-approve if they were pending
+      if (targetUser?.status === 'pending') {
+          updates.status = 'approved';
+      }
+      
+      await updateDoc(doc(db, 'users', uid), updates);
+      logAction('ROLE_CHANGED', { uid, email: targetUser?.email, newRole, autoApproved: updates.status === 'approved' });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
     }
@@ -158,7 +175,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const rejectUser = async (uid: string) => {
-    if (!isSuperAdmin) return;
+    if (!canManageUsers) return;
     const targetUser = allUsers.find(u => u.uid === uid);
     if (targetUser && isRootAdmin(targetUser.email)) return;
     if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente a este usuario?")) return;
@@ -171,7 +188,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const suspendUser = async (uid: string, currentStatus: string) => {
-    if (!isSuperAdmin) return;
+    if (!canManageUsers) return;
     const targetUser = allUsers.find(u => u.uid === uid);
     if (targetUser && isRootAdmin(targetUser.email)) return;
     try {
@@ -184,7 +201,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const deleteProject = async (projectId: string) => {
-    if (!isSuperAdmin) return;
+    if (!canManageUsers) return;
     if (!window.confirm("¿Estás seguro de que quieres eliminar este proyecto permanentemente? Todos los alumnos vinculados volverán a estar sin proyecto.")) return;
     
     try {
@@ -193,7 +210,7 @@ export const AdminDashboard: React.FC = () => {
       const resetPromises = usersInProject.map(u => 
         updateDoc(doc(db, 'users', u.uid), { 
           projectId: null,
-          status: 'pending' // Optional: move back to pending so admin re-approves them for a new project
+          status: 'approved' // Keep them approved but free
         })
       );
       
@@ -208,7 +225,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const resetUser = async (user: UserProfile) => {
-    if (!isSuperAdmin) return;
+    if (!canManageUsers) return;
     if (isRootAdmin(user.email)) return;
     if (!window.confirm(`¿Estás seguro de que quieres liberar a ${user.displayName} de su proyecto actual? Podrá crear o unirse a uno nuevo.`)) return;
     try {
@@ -380,13 +397,13 @@ export const AdminDashboard: React.FC = () => {
                           return (
                             <button
                               key={role}
-                              disabled={!isSuperAdmin || user.uid === realProfile?.uid || isRootUser}
+                              disabled={!canManageUsers || user.uid === realProfile?.uid || isRootUser}
                               onClick={() => handleRoleChange(user.uid, role)}
                               className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
                                 user.role === role 
                                   ? 'bg-slate-900 text-white shadow-sm' 
                                   : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              } disabled:opacity-40 disabled:cursor-not-allowed`}
                             >
                               {role === 'admin' ? 'ADMIN' : role === 'assistant' ? 'ASISTENTE' : 'ALUMNO'}
                             </button>
@@ -400,15 +417,15 @@ export const AdminDashboard: React.FC = () => {
                       <div className="flex-1 flex gap-2">
                         <button
                           onClick={() => approveUser(user.uid)}
-                          disabled={!isSuperAdmin}
+                          disabled={!canManageUsers}
                           className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50"
                         >
                           <CheckCircle className="w-4 h-4" />
-                          Aprobar Acceso
+                          Activar Cuenta
                         </button>
                         <button
                           onClick={() => rejectUser(user.uid)}
-                          disabled={!isSuperAdmin}
+                          disabled={!canManageUsers}
                           className="px-4 flex items-center justify-center bg-slate-100 text-slate-400 py-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
                           title="Rechazar"
                         >
@@ -427,7 +444,7 @@ export const AdminDashboard: React.FC = () => {
                               Suplantar
                             </button>
                           )}
-                          {isSuperAdmin && user.uid !== realProfile?.uid && !isRootAdmin(user.email) && (
+                          {canManageUsers && user.uid !== realProfile?.uid && !isRootAdmin(user.email) && (
                             <div className="flex gap-1">
                               <button
                                 onClick={() => suspendUser(user.uid, user.status)}
